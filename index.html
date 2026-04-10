@@ -5,8 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Hospital Ward Management Subsystem</title>
 
-
-
   <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
 
@@ -52,9 +50,7 @@
       z-index: 9999;
     }
 
-    /* ═══════════════════════════════
-       LOGIN SCREEN
-    ═══════════════════════════════ */
+    /* LOGIN SCREEN */
     #login-screen {
       position: fixed; inset: 0;
       background: var(--bg);
@@ -147,9 +143,7 @@
       min-height: 18px;
     }
 
-    /* ═══════════════════════════════
-       MAIN DASHBOARD
-    ═══════════════════════════════ */
+    /* DASHBOARD */
     #dashboard { display: none; padding: 24px; max-width: 1100px; margin: 0 auto; }
     #dashboard.visible { display: block; }
 
@@ -189,7 +183,6 @@
     }
     .logout-btn:hover { border-color: var(--danger); color: var(--danger); }
 
-    /* OVERRIDE BANNER */
     #override-banner {
       display: none;
       background: var(--danger);
@@ -207,7 +200,6 @@
     #override-banner.visible { display: block; }
     @keyframes blink-banner { 50% { opacity: 0.7; } }
 
-    /* GRID */
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
     @media (max-width: 700px) { .grid { grid-template-columns: 1fr; } }
 
@@ -236,7 +228,6 @@
       margin-bottom: 18px;
     }
 
-    /* STATUS ITEMS */
     .status-item {
       display: flex; justify-content: space-between; align-items: center;
       padding: 11px 0;
@@ -255,10 +246,8 @@
     .badge-secure { background: var(--success-bg); color: var(--success); border: 1px solid rgba(0,230,118,0.25); }
     .badge-breach { background: var(--danger-bg); color: var(--danger); border: 1px solid rgba(255,59,92,0.35); animation: blink 0.8s infinite; }
     .badge-call { background: var(--warn-bg); color: var(--warn); border: 1px solid rgba(255,170,0,0.35); animation: blink 0.8s infinite; }
-    .badge-override { background: rgba(255,23,68,0.15); color: var(--kill); border: 1px solid rgba(255,23,68,0.4); }
     @keyframes blink { 50% { opacity: 0.4; } }
 
-    /* BUTTONS */
     .btn {
       font-family: var(--ui);
       font-weight: 700;
@@ -286,7 +275,6 @@
 
     .sim-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
-    /* LOG */
     #log-container {
       height: 180px;
       overflow-y: auto;
@@ -305,10 +293,8 @@
     .log-time { color: var(--text-dim); margin-right: 8px; }
     .log-alert { color: var(--danger); }
     .log-ok { color: var(--success); }
-    .log-kill { color: var(--kill); }
     .log-info { color: var(--accent); }
 
-    /* HISTORY TABLE */
     .history-wrap { max-height: 220px; overflow-y: auto; margin-top: 8px; }
     .history-wrap::-webkit-scrollbar { width: 4px; }
     .history-wrap::-webkit-scrollbar-thumb { background: var(--border); }
@@ -329,9 +315,7 @@
     .tbl-breach { color: var(--danger); }
     .tbl-secure { color: var(--success); }
     .tbl-call { color: var(--warn); }
-    .tbl-kill { color: var(--kill); }
 
-    /* KILLSWITCH CARD */
     .card-kill { border-color: rgba(255,23,68,0.2); }
     .card-kill::before { background: linear-gradient(90deg, transparent, var(--kill), transparent); }
     .kill-status {
@@ -354,9 +338,6 @@
     .kill-state-label { font-family: var(--mono); font-size: 0.8rem; letter-spacing: 0.1em; }
     .kill-desc { font-size: 0.7rem; color: var(--text-dim); margin-left: auto; }
 
-    /* ═══════════════════════════════
-       MODALS
-    ═══════════════════════════════ */
     .modal-backdrop {
       position: fixed; inset: 0;
       background: rgba(0,0,0,0.75);
@@ -396,7 +377,6 @@
       color: var(--text);
       outline: none;
       transition: border-color 0.2s;
-      caret-color: var(--kill);
     }
     .pin-digit:focus { border-color: var(--kill); box-shadow: 0 0 0 3px rgba(255,23,68,0.12); }
     .modal-actions { display: flex; gap: 10px; }
@@ -414,7 +394,6 @@
       cursor: pointer;
       transition: all 0.2s;
     }
-    .modal-confirm:hover { box-shadow: 0 0 20px rgba(255,23,68,0.35); }
     .modal-cancel {
       flex: 1;
       background: transparent;
@@ -429,10 +408,8 @@
       cursor: pointer;
       transition: all 0.2s;
     }
-    .modal-cancel:hover { border-color: var(--text-dim); color: var(--text); }
     .modal-err { color: var(--kill); font-size: 0.72rem; letter-spacing: 0.1em; text-align: center; min-height: 16px; margin-top: 12px; }
 
-    /* notification permission bar */
     #notif-bar {
       background: rgba(0,212,255,0.08);
       border: 1px solid rgba(0,212,255,0.2);
@@ -444,7 +421,6 @@
       align-items: center;
       justify-content: space-between;
       margin-bottom: 20px;
-      letter-spacing: 0.05em;
     }
     #notif-bar.hidden { display: none; }
     .notif-bar-btn {
@@ -455,28 +431,25 @@
       padding: 6px 14px;
       font-size: 0.7rem;
       font-weight: 700;
-      letter-spacing: 0.12em;
       cursor: pointer;
     }
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
 
-<!-- ═══════════════════ LOGIN SCREEN ═══════════════════ -->
 <div id="login-screen">
   <div class="login-box">
     <div class="login-logo">⬡ MedGuard</div>
     <div class="login-sub">Ward Monitoring Subsystem · Secure Access</div>
     <label class="login-label" for="pw-input">Access Password</label>
-    <input class="login-input" type="password" id="pw-input" placeholder="Enter password" autocomplete="current-password" />
+    <input class="login-input" type="password" id="pw-input" placeholder="Enter password" />
     <button class="login-btn" onclick="attemptLogin()">Authenticate</button>
     <div class="login-err" id="login-err"></div>
   </div>
 </div>
 
-<!-- ═══════════════════ DASHBOARD ═══════════════════ -->
 <div id="dashboard">
-
   <div class="top-bar">
     <div class="top-title">⬡ MedGuard <span>/ Ward Subsystem</span></div>
     <div class="top-right">
@@ -485,18 +458,14 @@
     </div>
   </div>
 
-  <!-- Override Banner -->
   <div id="override-banner">⚠ KILLSWITCH ACTIVE — ALL SYSTEMS OVERRIDDEN</div>
 
-  <!-- Notification permission bar -->
   <div id="notif-bar">
     <span>🔔 Enable push notifications to receive alerts when this tab is inactive</span>
     <button class="notif-bar-btn" onclick="requestNotifPermission()">Enable</button>
   </div>
 
   <div class="grid">
-
-    <!-- LIVE STATUS -->
     <div class="card">
       <div class="card-title">Live System Status</div>
       <div class="status-item"><span class="status-label">System 1</span><span id="s1_badge" class="badge badge-secure">SECURE ✓</span></div>
@@ -506,7 +475,6 @@
       <button class="btn btn-reset" onclick="resetAll()">↺ System Reset / Mute</button>
     </div>
 
-    <!-- MANUAL CONTROLS -->
     <div class="card">
       <div class="card-title">Simulation Controls</div>
       <div class="sim-grid">
@@ -519,7 +487,6 @@
       <div id="log-container"><div id="logs"></div></div>
     </div>
 
-    <!-- KILLSWITCH -->
     <div class="card card-kill">
       <div class="card-title" style="color:rgba(255,23,68,0.7);">☠ Killswitch Override</div>
       <div class="kill-status">
@@ -529,43 +496,32 @@
       </div>
       <button class="btn btn-kill" id="kill-btn" onclick="openKillModal('activate')">☠ ACTIVATE KILLSWITCH</button>
       <button class="btn btn-rearm hidden" id="rearm-btn" onclick="openKillModal('rearm')">↺ RE-ARM SYSTEMS</button>
-      <p style="font-size:0.65rem;color:var(--text-dim);margin-top:10px;line-height:1.6;">
-        Activating the killswitch writes to Firebase <code style="color:var(--accent)">/killswitch: true</code>.<br>
-        The ESP32 reads this flag and overrides all hardware outputs.
-      </p>
     </div>
 
-    <!-- NOTIFICATION HISTORY -->
-    <div class="card" style="grid-column: span 1;">
+    <div class="card">
       <div class="card-title">Notification History</div>
       <div class="history-wrap">
         <table>
-          <thead>
-            <tr><th>Timestamp</th><th>Event</th><th>Status</th></tr>
-          </thead>
-          <tbody id="history-body">
-            <tr><td colspan="3" style="color:var(--text-dim);text-align:center;padding:16px;">No events recorded yet.</td></tr>
-          </tbody>
+          <thead><tr><th>Timestamp</th><th>Event</th><th>Status</th></tr></thead>
+          <tbody id="history-body"></tbody>
         </table>
       </div>
       <button class="btn btn-export" onclick="exportCSV()">↓ Export Log as CSV</button>
     </div>
-
-  </div><!-- /grid -->
-</div><!-- /dashboard -->
+  </div>
+</div>
 
 <audio id="alarmSound" loop><source src="alert.mp3" type="audio/mpeg"></audio>
 
-<!-- ═══════════════════ KILLSWITCH MODAL ═══════════════════ -->
 <div class="modal-backdrop hidden" id="kill-modal">
   <div class="modal">
     <div class="modal-title" id="modal-title">Activate Killswitch</div>
     <div class="modal-sub" id="modal-sub">Enter the 4-digit admin PIN to confirm override.</div>
     <div class="pin-row">
-      <input class="pin-digit" type="password" maxlength="1" id="p0" inputmode="numeric" pattern="[0-9]" />
-      <input class="pin-digit" type="password" maxlength="1" id="p1" inputmode="numeric" pattern="[0-9]" />
-      <input class="pin-digit" type="password" maxlength="1" id="p2" inputmode="numeric" pattern="[0-9]" />
-      <input class="pin-digit" type="password" maxlength="1" id="p3" inputmode="numeric" pattern="[0-9]" />
+      <input class="pin-digit" type="password" maxlength="1" id="p0" inputmode="numeric" />
+      <input class="pin-digit" type="password" maxlength="1" id="p1" inputmode="numeric" />
+      <input class="pin-digit" type="password" maxlength="1" id="p2" inputmode="numeric" />
+      <input class="pin-digit" type="password" maxlength="1" id="p3" inputmode="numeric" />
     </div>
     <div class="modal-actions">
       <button class="modal-cancel" onclick="closeKillModal()">Cancel</button>
@@ -575,15 +531,10 @@
   </div>
 </div>
 
-
-
 <script>
-  // ════════════════════════════════════════
-  //  CONFIG — fill these in
-  // ════════════════════════════════════════
-  const DASHBOARD_PASSWORD = "ward2024";   // change me
-  const ADMIN_PIN          = "1234";       // change me
-  const VAPID_KEY          = "YOUR_VAPID_KEY_HERE"; // from Firebase Console > Project Settings > Cloud Messaging
+  // CONFIG
+  const DASHBOARD_PASSWORD = "ward2024";
+  const ADMIN_PIN          = "1234";
 
   const firebaseConfig = {
     apiKey:            "AIzaSyCePnTRSWFX-R0n4iIMLHIr0PZjk-WcHco",
@@ -595,64 +546,59 @@
     appId:             "1:992963491194:web:f0d0b95343114e067e52c3"
   };
 
-  // ════════════════════════════════════════
-  //  ALARM — alert.mp3
-  // ════════════════════════════════════════
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
   const alarm = document.getElementById('alarmSound');
+  let killActive = false;
+  let historyData = [];
+  let prevState = {};
 
-  function unlockAudio() {
+  // 1. PRIME SYSTEMS (Vibration & Audio)
+  function primeSystems() {
+    // Unlock Audio
     alarm.volume = 0;
     alarm.play().then(() => {
       alarm.pause();
       alarm.currentTime = 0;
       alarm.volume = 1;
-    }).catch(() => { alarm.volume = 1; });
+    }).catch(() => {});
+
+    // Prime Vibration API
+    if ("vibrate" in navigator) {
+      navigator.vibrate(20); // Quick micro-vibration
+    }
   }
 
   function startAlarm() {
     if (!alarm.paused) return;
-    alarm.currentTime = 0;
     alarm.play().catch(() => {});
+    
+    // START VIBRATION: Pulse pattern (500ms on, 200ms off)
+    if ("vibrate" in navigator) {
+      navigator.vibrate([500, 200, 500, 200, 500, 200, 500]);
+    }
   }
 
   function stopAlarm() {
     alarm.pause();
     alarm.currentTime = 0;
+    
+    // STOP VIBRATION
+    if ("vibrate" in navigator) {
+      navigator.vibrate(0);
+    }
   }
 
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.database();
-  let killModalMode = 'activate'; // 'activate' | 'rearm'
-  let historyData  = []; // in-memory log for CSV
-
-  // ── Clock ──
-  setInterval(() => {
-    document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-GB');
-  }, 1000);
-
-  // ════════════════════════════════════════
-  //  LOGIN
-  // ════════════════════════════════════════
+  // LOGIN
   function attemptLogin() {
     const pw = document.getElementById('pw-input').value;
     if (pw === DASHBOARD_PASSWORD) {
       sessionStorage.setItem('auth', '1');
-      unlockAudio();
+      primeSystems(); // Trigger on user click
       showDashboard();
     } else {
-      document.getElementById('login-err').textContent = 'Incorrect password. Access denied.';
-      document.getElementById('pw-input').value = '';
+      document.getElementById('login-err').textContent = 'Incorrect password.';
     }
-  }
-
-  document.getElementById('pw-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter') attemptLogin();
-  });
-
-  function logout() {
-    sessionStorage.removeItem('auth');
-    document.getElementById('dashboard').classList.remove('visible');
-    document.getElementById('login-screen').classList.remove('hidden');
   }
 
   function showDashboard() {
@@ -662,16 +608,16 @@
     checkNotifPermission();
   }
 
-  // Auto-login if session active
+  function logout() {
+    sessionStorage.removeItem('auth');
+    location.reload();
+  }
+
   window.addEventListener('load', () => {
-    if (sessionStorage.getItem('auth') === '1') {
-      showDashboard();
-    }
+    if (sessionStorage.getItem('auth') === '1') showDashboard();
   });
 
-  // ════════════════════════════════════════
-  //  FIREBASE HELPERS
-  // ════════════════════════════════════════
+  // FIREBASE LOGIC
   function updateDB(path, val) { db.ref(path).set(val); }
 
   function resetAll() {
@@ -679,13 +625,10 @@
     updateDB('system3', 0); updateDB('nurse_call', 0);
   }
 
-  // ════════════════════════════════════════
-  //  LOGGING (local + Firebase /logs)
-  // ════════════════════════════════════════
   function addLog(message, type = 'alert') {
     const logDiv = document.getElementById('logs');
-    const now    = new Date().toLocaleTimeString('en-GB');
-    const cls    = type === 'ok' ? 'log-ok' : type === 'kill' ? 'log-kill' : type === 'info' ? 'log-info' : 'log-alert';
+    const now = new Date().toLocaleTimeString('en-GB');
+    const cls = type === 'ok' ? 'log-ok' : type === 'kill' ? 'log-kill' : type === 'info' ? 'log-info' : 'log-alert';
     logDiv.innerHTML = `<div class="log-entry"><span class="log-time">[${now}]</span><span class="${cls}"> ${message}</span></div>` + logDiv.innerHTML;
   }
 
@@ -696,112 +639,43 @@
     renderHistory();
   }
 
-  // ════════════════════════════════════════
-  //  HISTORY TABLE
-  // ════════════════════════════════════════
   function renderHistory() {
     const tbody = document.getElementById('history-body');
     if (historyData.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="3" style="color:var(--text-dim);text-align:center;padding:16px;">No events recorded yet.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">No events.</td></tr>';
       return;
     }
     tbody.innerHTML = historyData.map(row => {
-      const d  = new Date(row.timestamp);
-      const ts = d.toLocaleDateString('en-GB') + ' ' + d.toLocaleTimeString('en-GB');
-      const cls = row.status.toLowerCase().includes('breach') || row.status === 'TRIGGERED' ? 'tbl-breach'
-                : row.status === 'SECURE' || row.status === 'IDLE' ? 'tbl-secure'
-                : row.status === 'OVERRIDE' || row.status === 'RE-ARMED' ? 'tbl-kill'
-                : 'tbl-call';
-      return `<tr><td>${ts}</td><td>${row.event}</td><td class="${cls}">${row.status}</td></tr>`;
+      const d = new Date(row.timestamp);
+      const ts = d.toLocaleTimeString('en-GB');
+      return `<tr><td>${ts}</td><td>${row.event}</td><td>${row.status}</td></tr>`;
     }).join('');
   }
 
-  // Load existing logs from Firebase on startup
-  function loadFirebaseLogs() {
-    db.ref('logs').orderByChild('timestamp').limitToLast(100).once('value', snap => {
-      if (!snap.exists()) return;
-      historyData = Object.values(snap.val()).reverse();
-      renderHistory();
-    });
-  }
-
-  function exportCSV() {
-    if (historyData.length === 0) { alert('No history to export.'); return; }
-    const header = 'Timestamp,Event,Status\n';
-    const rows   = historyData.map(r => `"${r.timestamp}","${r.event}","${r.status}"`).join('\n');
-    const blob   = new Blob([header + rows], { type: 'text/csv' });
-    const url    = URL.createObjectURL(blob);
-    const a      = document.createElement('a'); a.href = url;
-    a.download   = `ward_log_${new Date().toISOString().slice(0,10)}.csv`;
-    a.click(); URL.revokeObjectURL(url);
-  }
-
-  // ════════════════════════════════════════
-  //  PUSH NOTIFICATIONS
-  // ════════════════════════════════════════
-  function checkNotifPermission() {
-    if (!('Notification' in window)) {
-      document.getElementById('notif-bar').classList.add('hidden'); return;
-    }
-    if (Notification.permission === 'granted') {
-      document.getElementById('notif-bar').classList.add('hidden');
-    }
-  }
-
-  function requestNotifPermission() {
-    Notification.requestPermission().then(perm => {
-      if (perm === 'granted') {
-        document.getElementById('notif-bar').classList.add('hidden');
-        addLog('Push notifications enabled', 'info');
-      }
-    });
-  }
-
-  function sendPushNotification(title, body) {
-    if (Notification.permission !== 'granted') return;
-    new Notification(title, {
-      body,
-      icon: 'https://em-content.zobj.net/source/google/387/hospital_1f3e5.png',
-      badge: 'https://em-content.zobj.net/source/google/387/hospital_1f3e5.png',
-      tag: 'ward-alert',
-      renotify: true
-    });
-  }
-
-  // ════════════════════════════════════════
-  //  FIREBASE LISTENERS
-  // ════════════════════════════════════════
-  let prevState = {};
-
   function setupListener(path, elementId, label) {
     db.ref(path).on('value', snap => {
-      const val   = snap.val();
-      const el    = document.getElementById(elementId);
-      const prev  = prevState[path];
+      const val = snap.val();
+      const el = document.getElementById(elementId);
+      const prev = prevState[path];
       prevState[path] = val;
-
       const isNurse = path === 'nurse_call';
 
       if (val === 1) {
         el.innerText = isNurse ? '🔔 ACTIVE' : '🚨 BREACH';
         el.className = isNurse ? 'badge badge-call' : 'badge badge-breach';
-
         if (prev !== 1) {
-          const status = isNurse ? 'TRIGGERED' : 'BREACH';
           addLog(`${label} Triggered`, 'alert');
-          saveToFirebaseLog(label, status);
-          sendPushNotification(`⚠ ${label}`, isNurse ? 'Technician call button pressed.' : 'Security breach detected!');
+          saveToFirebaseLog(label, isNurse ? 'TRIGGERED' : 'BREACH');
+          sendPushNotification(`⚠ ${label}`, 'Attention required in ward.');
         }
       } else {
         el.innerText = isNurse ? 'IDLE' : 'SECURE ✓';
         el.className = 'badge badge-secure';
-
         if (prev === 1) {
           addLog(`${label} Cleared`, 'ok');
-          saveToFirebaseLog(label, isNurse ? 'IDLE' : 'SECURE');
+          saveToFirebaseLog(label, 'CLEARED');
         }
       }
-
       checkGlobalState();
     });
   }
@@ -813,126 +687,58 @@
       db.ref('system3').once('value'),
       db.ref('nurse_call').once('value')
     ]).then(([s1, s2, s3, nc]) => {
-      const v1 = s1.val(), v2 = s2.val(), v3 = s3.val(), vn = nc.val();
-      const anyActive = v1 == 1 || v2 == 1 || v3 == 1 || vn == 1;
+      const anyActive = s1.val() == 1 || s2.val() == 1 || s3.val() == 1 || nc.val() == 1;
       if (anyActive && !killActive) {
-        const nurseOnly = vn == 1 && v1 != 1 && v2 != 1 && v3 != 1;
-        document.body.style.backgroundColor = nurseOnly ? '#1a1500' : '#1a0008';
         startAlarm();
+        document.body.style.backgroundColor = '#1a0008';
       } else {
-        document.body.style.backgroundColor = '';
-        stopAlarm();
-      }
-    });
-  }
-
-  // Killswitch listener
-  function setupKillswitchListener() {
-    db.ref('killswitch').on('value', snap => {
-      killActive = snap.val() === true;
-      const dot   = document.getElementById('kill-dot');
-      const label = document.getElementById('kill-state-label');
-      const desc  = document.getElementById('kill-desc');
-      const banner = document.getElementById('override-banner');
-      const killBtn  = document.getElementById('kill-btn');
-      const rearmBtn = document.getElementById('rearm-btn');
-
-      if (killActive) {
-        dot.classList.add('active');
-        label.textContent = 'OVERRIDE ACTIVE';
-        label.style.color = 'var(--kill)';
-        desc.textContent  = 'Hardware silenced';
-        banner.classList.add('visible');
-        killBtn.classList.add('hidden');
-        rearmBtn.classList.remove('hidden');
-        // mute alarm during override
         stopAlarm();
         document.body.style.backgroundColor = '';
-      } else {
-        dot.classList.remove('active');
-        label.textContent = 'ARMED — SYSTEMS NOMINAL';
-        label.style.color = '';
-        desc.textContent  = 'Monitoring active';
-        banner.classList.remove('visible');
-        killBtn.classList.remove('hidden');
-        rearmBtn.classList.add('hidden');
       }
     });
   }
 
   function startListeners() {
-    setupListener('system1',    's1_badge',    'System 1 Breach');
-    setupListener('system2',    's2_badge',    'System 2 Breach');
-    setupListener('system3',    's3_badge',    'System 3 Breach');
-    setupListener('nurse_call', 'nurse_badge', 'Technician Call');
-    setupKillswitchListener();
-    loadFirebaseLogs();
+    setupListener('system1', 's1_badge', 'System 1');
+    setupListener('system2', 's2_badge', 'System 2');
+    setupListener('system3', 's3_badge', 'System 3');
+    setupListener('nurse_call', 'nurse_badge', 'Tech Call');
+    
+    db.ref('killswitch').on('value', snap => {
+      killActive = snap.val() === true;
+      const banner = document.getElementById('override-banner');
+      const dot = document.getElementById('kill-dot');
+      if (killActive) {
+        banner.classList.add('visible');
+        dot.classList.add('active');
+        stopAlarm();
+      } else {
+        banner.classList.remove('visible');
+        dot.classList.remove('active');
+      }
+    });
   }
 
-  // ════════════════════════════════════════
-  //  KILLSWITCH MODAL
-  // ════════════════════════════════════════
+  // MODAL LOGIC
   function openKillModal(mode) {
-    killModalMode = mode;
-    clearPinInputs();
-    document.getElementById('modal-err').textContent = '';
-    document.getElementById('modal-title').textContent = mode === 'activate' ? '☠ Activate Killswitch' : '↺ Re-Arm Systems';
-    document.getElementById('modal-sub').textContent  = mode === 'activate'
-      ? 'Enter admin PIN to override and silence all hardware.'
-      : 'Enter admin PIN to re-arm systems and resume monitoring.';
-    document.getElementById('modal-confirm-btn').textContent = mode === 'activate' ? 'Confirm Override' : 'Confirm Re-Arm';
     document.getElementById('kill-modal').classList.remove('hidden');
     document.getElementById('p0').focus();
   }
+  function closeKillModal() { document.getElementById('kill-modal').classList.add('hidden'); }
 
-  function closeKillModal() {
-    document.getElementById('kill-modal').classList.add('hidden');
-    clearPinInputs();
+  // NOTIFICATIONS
+  function checkNotifPermission() {
+    if (Notification.permission === 'granted') document.getElementById('notif-bar').classList.add('hidden');
+  }
+  function requestNotifPermission() {
+    Notification.requestPermission().then(p => { if(p==='granted') checkNotifPermission(); });
+  }
+  function sendPushNotification(title, body) {
+    if (Notification.permission === 'granted') new Notification(title, { body });
   }
 
-  function clearPinInputs() {
-    ['p0','p1','p2','p3'].forEach(id => document.getElementById(id).value = '');
-  }
-
-  // PIN auto-advance
-  ['p0','p1','p2','p3'].forEach((id, i) => {
-    document.getElementById(id).addEventListener('input', e => {
-      const val = e.target.value.replace(/\D/g, '');
-      e.target.value = val;
-      if (val && i < 3) document.getElementById(`p${i+1}`).focus();
-    });
-    document.getElementById(id).addEventListener('keydown', e => {
-      if (e.key === 'Backspace' && !e.target.value && i > 0) document.getElementById(`p${i-1}`).focus();
-      if (e.key === 'Enter') confirmKill();
-    });
-  });
-
-  function confirmKill() {
-    const pin = ['p0','p1','p2','p3'].map(id => document.getElementById(id).value).join('');
-    if (pin.length < 4) {
-      document.getElementById('modal-err').textContent = 'Please enter all 4 digits.'; return;
-    }
-    if (pin !== ADMIN_PIN) {
-      document.getElementById('modal-err').textContent = 'Incorrect PIN. Access denied.';
-      clearPinInputs();
-      document.getElementById('p0').focus();
-      return;
-    }
-
-    closeKillModal();
-
-    if (killModalMode === 'activate') {
-      db.ref('killswitch').set(true);
-      addLog('KILLSWITCH ACTIVATED by operator', 'kill');
-      saveToFirebaseLog('Killswitch', 'OVERRIDE');
-      sendPushNotification('☠ Killswitch Activated', 'All hardware overridden by operator.');
-    } else {
-      db.ref('killswitch').set(false);
-      addLog('Systems re-armed by operator', 'ok');
-      saveToFirebaseLog('Killswitch', 'RE-ARMED');
-      sendPushNotification('✓ Systems Re-Armed', 'Ward monitoring resumed.');
-    }
-  }
+  // UTILS
+  setInterval(() => { document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-GB'); }, 1000);
 </script>
 </body>
 </html>
