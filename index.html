@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hospital Ward Management Subsystem</title>
+
+
+
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@300;500;700;900&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --bg: #0a0e1a;
+      --surface: #111827;
+      --surface2: #1a2235;
+      --border: #1e2d45;
+      --accent: #00d4ff;
+      --accent2: #0099bb;
+      --danger: #ff3b5c;
+      --danger-bg: rgba(255,59,92,0.12);
+      --warn: #ffaa00;
+      --warn-bg: rgba(255,170,0,0.12);
+      --success: #00e676;
+      --success-bg: rgba(0,230,118,0.1);
+      --text: #e2eaf5;
+      --text-dim: #5a7a9a;
+      --mono: 'Share Tech Mono', monospace;
+      --ui: 'Exo 2', sans-serif;
+      --kill: #ff1744;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--ui);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ─── SCANLINE OVERLAY ─── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,212,255,0.015) 2px, rgba(0,212,255,0.015) 4px);
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    /* ═══════════════════════════════
+       LOGIN SCREEN
+    ═══════════════════════════════ */
+    #login-screen {
+      position: fixed; inset: 0;
+      background: var(--bg);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1000;
+      flex-direction: column;
+      gap: 0;
+    }
+    #login-screen.hidden { display: none; }
+
+    .login-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-top: 3px solid var(--accent);
+      padding: 48px 44px 40px;
+      border-radius: 4px;
+      width: 360px;
+      position: relative;
+      box-shadow: 0 0 60px rgba(0,212,255,0.07);
+    }
+    .login-box::after {
+      content: '';
+      position: absolute;
+      top: -3px; left: 40px; right: 40px;
+      height: 3px;
+      background: var(--accent);
+      filter: blur(6px);
+    }
+    .login-logo {
+      font-family: var(--ui);
+      font-weight: 900;
+      font-size: 1.15rem;
+      letter-spacing: 0.25em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .login-sub {
+      font-size: 0.72rem;
+      letter-spacing: 0.18em;
+      color: var(--text-dim);
+      margin-bottom: 36px;
+      text-transform: uppercase;
+    }
+    .login-label {
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      display: block;
+    }
+    .login-input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 12px 14px;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 1rem;
+      letter-spacing: 0.1em;
+      outline: none;
+      transition: border-color 0.2s;
+      margin-bottom: 24px;
+    }
+    .login-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,212,255,0.1); }
+    .login-btn {
+      width: 100%;
+      background: var(--accent);
+      color: #000;
+      font-family: var(--ui);
+      font-weight: 700;
+      font-size: 0.85rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      border: none;
+      border-radius: 3px;
+      padding: 13px;
+      cursor: pointer;
+      transition: background 0.2s, box-shadow 0.2s;
+    }
+    .login-btn:hover { background: #33ddff; box-shadow: 0 0 20px rgba(0,212,255,0.3); }
+    .login-err {
+      color: var(--danger);
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      margin-top: 12px;
+      text-align: center;
+      min-height: 18px;
+    }
+
+    /* ═══════════════════════════════
+       MAIN DASHBOARD
+    ═══════════════════════════════ */
+    #dashboard { display: none; padding: 24px; max-width: 1100px; margin: 0 auto; }
+    #dashboard.visible { display: block; }
+
+    .top-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 28px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--border);
+    }
+    .top-title {
+      font-weight: 900;
+      font-size: 1.1rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+    .top-title span { color: var(--text-dim); font-weight: 300; }
+    .top-right { display: flex; align-items: center; gap: 14px; }
+    .clock {
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      letter-spacing: 0.1em;
+    }
+    .logout-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-family: var(--ui);
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      padding: 7px 14px;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .logout-btn:hover { border-color: var(--danger); color: var(--danger); }
+
+    /* OVERRIDE BANNER */
+    #override-banner {
+      display: none;
+      background: var(--danger);
+      color: #fff;
+      text-align: center;
+      padding: 12px;
+      font-weight: 700;
+      font-size: 0.85rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      border-radius: 4px;
+      margin-bottom: 20px;
+      animation: blink-banner 1s infinite;
+    }
+    #override-banner.visible { display: block; }
+    @keyframes blink-banner { 50% { opacity: 0.7; } }
+
+    /* GRID */
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 700px) { .grid { grid-template-columns: 1fr; } }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 22px;
+      position: relative;
+      overflow: hidden;
+    }
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      opacity: 0.4;
+    }
+    .card-title {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 18px;
+    }
+
+    /* STATUS ITEMS */
+    .status-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 11px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .status-item:last-of-type { border-bottom: none; }
+    .status-label { font-size: 0.85rem; font-weight: 500; letter-spacing: 0.05em; }
+    .badge {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      font-weight: bold;
+      padding: 4px 12px;
+      border-radius: 2px;
+      letter-spacing: 0.1em;
+    }
+    .badge-secure { background: var(--success-bg); color: var(--success); border: 1px solid rgba(0,230,118,0.25); }
+    .badge-breach { background: var(--danger-bg); color: var(--danger); border: 1px solid rgba(255,59,92,0.35); animation: blink 0.8s infinite; }
+    .badge-call { background: var(--warn-bg); color: var(--warn); border: 1px solid rgba(255,170,0,0.35); animation: blink 0.8s infinite; }
+    .badge-override { background: rgba(255,23,68,0.15); color: var(--kill); border: 1px solid rgba(255,23,68,0.4); }
+    @keyframes blink { 50% { opacity: 0.4; } }
+
+    /* BUTTONS */
+    .btn {
+      font-family: var(--ui);
+      font-weight: 700;
+      font-size: 0.75rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      padding: 10px 16px;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-breach { background: var(--danger-bg); color: var(--danger); border: 1px solid rgba(255,59,92,0.3); }
+    .btn-breach:hover { background: var(--danger); color: #fff; }
+    .btn-nurse { background: var(--warn-bg); color: var(--warn); border: 1px solid rgba(255,170,0,0.3); }
+    .btn-nurse:hover { background: var(--warn); color: #000; }
+    .btn-reset { background: var(--surface2); color: var(--accent); border: 1px solid var(--border); width: 100%; margin-top: 16px; }
+    .btn-reset:hover { border-color: var(--accent); box-shadow: 0 0 12px rgba(0,212,255,0.15); }
+    .btn-export { background: var(--surface2); color: var(--success); border: 1px solid rgba(0,230,118,0.25); margin-top: 12px; }
+    .btn-export:hover { background: var(--success-bg); }
+    .btn-kill { background: rgba(255,23,68,0.12); color: var(--kill); border: 1px solid rgba(255,23,68,0.35); width: 100%; margin-top: 12px; font-size: 0.8rem; padding: 13px; }
+    .btn-kill:hover { background: var(--kill); color: #fff; box-shadow: 0 0 20px rgba(255,23,68,0.3); }
+    .btn-rearm { background: rgba(0,230,118,0.1); color: var(--success); border: 1px solid rgba(0,230,118,0.3); width: 100%; margin-top: 8px; }
+    .btn-rearm:hover { background: var(--success); color: #000; }
+
+    .sim-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+    /* LOG */
+    #log-container {
+      height: 180px;
+      overflow-y: auto;
+      background: #07090f;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 12px;
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      margin-top: 8px;
+    }
+    #log-container::-webkit-scrollbar { width: 4px; }
+    #log-container::-webkit-scrollbar-track { background: transparent; }
+    #log-container::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+    .log-entry { padding: 4px 0; border-bottom: 1px solid #0d1520; color: #8ab0cc; }
+    .log-time { color: var(--text-dim); margin-right: 8px; }
+    .log-alert { color: var(--danger); }
+    .log-ok { color: var(--success); }
+    .log-kill { color: var(--kill); }
+    .log-info { color: var(--accent); }
+
+    /* HISTORY TABLE */
+    .history-wrap { max-height: 220px; overflow-y: auto; margin-top: 8px; }
+    .history-wrap::-webkit-scrollbar { width: 4px; }
+    .history-wrap::-webkit-scrollbar-thumb { background: var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
+    th {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      color: var(--text-dim);
+      text-align: left;
+      padding: 7px 10px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+      position: sticky; top: 0;
+    }
+    td { padding: 7px 10px; border-bottom: 1px solid #0d1520; color: #8ab0cc; }
+    tr:hover td { background: var(--surface2); }
+    .tbl-breach { color: var(--danger); }
+    .tbl-secure { color: var(--success); }
+    .tbl-call { color: var(--warn); }
+    .tbl-kill { color: var(--kill); }
+
+    /* KILLSWITCH CARD */
+    .card-kill { border-color: rgba(255,23,68,0.2); }
+    .card-kill::before { background: linear-gradient(90deg, transparent, var(--kill), transparent); }
+    .kill-status {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      margin-bottom: 4px;
+    }
+    .kill-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 8px var(--success);
+      flex-shrink: 0;
+      transition: all 0.3s;
+    }
+    .kill-dot.active { background: var(--kill); box-shadow: 0 0 12px var(--kill); animation: blink 0.6s infinite; }
+    .kill-state-label { font-family: var(--mono); font-size: 0.8rem; letter-spacing: 0.1em; }
+    .kill-desc { font-size: 0.7rem; color: var(--text-dim); margin-left: auto; }
+
+    /* ═══════════════════════════════
+       MODALS
+    ═══════════════════════════════ */
+    .modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.75);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 500;
+      backdrop-filter: blur(4px);
+    }
+    .modal-backdrop.hidden { display: none; }
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-top: 3px solid var(--kill);
+      padding: 36px 32px;
+      border-radius: 4px;
+      width: 340px;
+      position: relative;
+      box-shadow: 0 0 60px rgba(255,23,68,0.15);
+    }
+    .modal-title {
+      font-weight: 900;
+      font-size: 1rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--kill);
+      margin-bottom: 6px;
+    }
+    .modal-sub { font-size: 0.72rem; color: var(--text-dim); letter-spacing: 0.1em; margin-bottom: 28px; }
+    .pin-row { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
+    .pin-digit {
+      width: 56px; height: 64px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      text-align: center;
+      font-family: var(--mono);
+      font-size: 1.8rem;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s;
+      caret-color: var(--kill);
+    }
+    .pin-digit:focus { border-color: var(--kill); box-shadow: 0 0 0 3px rgba(255,23,68,0.12); }
+    .modal-actions { display: flex; gap: 10px; }
+    .modal-confirm {
+      flex: 1;
+      background: var(--kill);
+      color: #fff;
+      font-family: var(--ui);
+      font-weight: 700;
+      font-size: 0.78rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      border: none; border-radius: 3px;
+      padding: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .modal-confirm:hover { box-shadow: 0 0 20px rgba(255,23,68,0.35); }
+    .modal-cancel {
+      flex: 1;
+      background: transparent;
+      color: var(--text-dim);
+      font-family: var(--ui);
+      font-size: 0.78rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .modal-cancel:hover { border-color: var(--text-dim); color: var(--text); }
+    .modal-err { color: var(--kill); font-size: 0.72rem; letter-spacing: 0.1em; text-align: center; min-height: 16px; margin-top: 12px; }
+
+    /* notification permission bar */
+    #notif-bar {
+      background: rgba(0,212,255,0.08);
+      border: 1px solid rgba(0,212,255,0.2);
+      border-radius: 4px;
+      padding: 10px 16px;
+      font-size: 0.75rem;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      letter-spacing: 0.05em;
+    }
+    #notif-bar.hidden { display: none; }
+    .notif-bar-btn {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      border-radius: 3px;
+      padding: 6px 14px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════ LOGIN SCREEN ═══════════════════ -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">⬡ MedGuard</div>
+    <div class="login-sub">Ward Monitoring Subsystem · Secure Access</div>
+    <label class="login-label" for="pw-input">Access Password</label>
+    <input class="login-input" type="password" id="pw-input" placeholder="Enter password" autocomplete="current-password" />
+    <button class="login-btn" onclick="attemptLogin()">Authenticate</button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════ DASHBOARD ═══════════════════ -->
+<div id="dashboard">
+
+  <div class="top-bar">
+    <div class="top-title">⬡ MedGuard <span>/ Ward Subsystem</span></div>
+    <div class="top-right">
+      <div class="clock" id="clock">--:--:--</div>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+  <!-- Override Banner -->
+  <div id="override-banner">⚠ KILLSWITCH ACTIVE — ALL SYSTEMS OVERRIDDEN</div>
+
+  <!-- Notification permission bar -->
+  <div id="notif-bar">
+    <span>🔔 Enable push notifications to receive alerts when this tab is inactive</span>
+    <button class="notif-bar-btn" onclick="requestNotifPermission()">Enable</button>
+  </div>
+
+  <div class="grid">
+
+    <!-- LIVE STATUS -->
+    <div class="card">
+      <div class="card-title">Live System Status</div>
+      <div class="status-item"><span class="status-label">System 1</span><span id="s1_badge" class="badge badge-secure">SECURE ✓</span></div>
+      <div class="status-item"><span class="status-label">System 2</span><span id="s2_badge" class="badge badge-secure">SECURE ✓</span></div>
+      <div class="status-item"><span class="status-label">System 3</span><span id="s3_badge" class="badge badge-secure">SECURE ✓</span></div>
+      <div class="status-item"><span class="status-label">Technician Call</span><span id="nurse_badge" class="badge badge-secure">IDLE</span></div>
+      <button class="btn btn-reset" onclick="resetAll()">↺ System Reset / Mute</button>
+    </div>
+
+    <!-- MANUAL CONTROLS -->
+    <div class="card">
+      <div class="card-title">Simulation Controls</div>
+      <div class="sim-grid">
+        <button class="btn btn-breach" onclick="updateDB('system1', 1)">Breach 1</button>
+        <button class="btn btn-breach" onclick="updateDB('system2', 1)">Breach 2</button>
+        <button class="btn btn-breach" onclick="updateDB('system3', 1)">Breach 3</button>
+        <button class="btn btn-nurse" onclick="updateDB('nurse_call', 1)">🔔 Technician Call</button>
+      </div>
+      <div class="card-title" style="margin-top:18px;">Activity Log</div>
+      <div id="log-container"><div id="logs"></div></div>
+    </div>
+
+    <!-- KILLSWITCH -->
+    <div class="card card-kill">
+      <div class="card-title" style="color:rgba(255,23,68,0.7);">☠ Killswitch Override</div>
+      <div class="kill-status">
+        <div class="kill-dot" id="kill-dot"></div>
+        <span class="kill-state-label" id="kill-state-label">ARMED — SYSTEMS NOMINAL</span>
+        <span class="kill-desc" id="kill-desc">Monitoring active</span>
+      </div>
+      <button class="btn btn-kill" id="kill-btn" onclick="openKillModal('activate')">☠ ACTIVATE KILLSWITCH</button>
+      <button class="btn btn-rearm hidden" id="rearm-btn" onclick="openKillModal('rearm')">↺ RE-ARM SYSTEMS</button>
+      <p style="font-size:0.65rem;color:var(--text-dim);margin-top:10px;line-height:1.6;">
+        Activating the killswitch writes to Firebase <code style="color:var(--accent)">/killswitch: true</code>.<br>
+        The ESP32 reads this flag and overrides all hardware outputs.
+      </p>
+    </div>
+
+    <!-- NOTIFICATION HISTORY -->
+    <div class="card" style="grid-column: span 1;">
+      <div class="card-title">Notification History</div>
+      <div class="history-wrap">
+        <table>
+          <thead>
+            <tr><th>Timestamp</th><th>Event</th><th>Status</th></tr>
+          </thead>
+          <tbody id="history-body">
+            <tr><td colspan="3" style="color:var(--text-dim);text-align:center;padding:16px;">No events recorded yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <button class="btn btn-export" onclick="exportCSV()">↓ Export Log as CSV</button>
+    </div>
+
+  </div><!-- /grid -->
+</div><!-- /dashboard -->
+
+<audio id="alarmSound" loop><source src="alert.mp3" type="audio/mpeg"></audio>
+
+<!-- ═══════════════════ KILLSWITCH MODAL ═══════════════════ -->
+<div class="modal-backdrop hidden" id="kill-modal">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">Activate Killswitch</div>
+    <div class="modal-sub" id="modal-sub">Enter the 4-digit admin PIN to confirm override.</div>
+    <div class="pin-row">
+      <input class="pin-digit" type="password" maxlength="1" id="p0" inputmode="numeric" pattern="[0-9]" />
+      <input class="pin-digit" type="password" maxlength="1" id="p1" inputmode="numeric" pattern="[0-9]" />
+      <input class="pin-digit" type="password" maxlength="1" id="p2" inputmode="numeric" pattern="[0-9]" />
+      <input class="pin-digit" type="password" maxlength="1" id="p3" inputmode="numeric" pattern="[0-9]" />
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeKillModal()">Cancel</button>
+      <button class="modal-confirm" id="modal-confirm-btn" onclick="confirmKill()">Confirm</button>
+    </div>
+    <div class="modal-err" id="modal-err"></div>
+  </div>
+</div>
+
+
+
+<script>
+  // ════════════════════════════════════════
+  //  CONFIG — fill these in
+  // ════════════════════════════════════════
+  const DASHBOARD_PASSWORD = "ward2024";   // change me
+  const ADMIN_PIN          = "1234";       // change me
+  const VAPID_KEY          = "YOUR_VAPID_KEY_HERE"; // from Firebase Console > Project Settings > Cloud Messaging
+
+  const firebaseConfig = {
+    apiKey:            "AIzaSyCePnTRSWFX-R0n4iIMLHIr0PZjk-WcHco",
+    authDomain:        "msesalert-b972d.firebaseapp.com",
+    databaseURL:       "https://msesalert-b972d-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId:         "msesalert-b972d",
+    storageBucket:     "msesalert-b972d.firebasestorage.app",
+    messagingSenderId: "992963491194",
+    appId:             "1:992963491194:web:f0d0b95343114e067e52c3"
+  };
+
+  // ════════════════════════════════════════
+  //  ALARM — alert.mp3
+  // ════════════════════════════════════════
+  const alarm = document.getElementById('alarmSound');
+
+  function unlockAudio() {
+    alarm.volume = 0;
+    alarm.play().then(() => {
+      alarm.pause();
+      alarm.currentTime = 0;
+      alarm.volume = 1;
+    }).catch(() => { alarm.volume = 1; });
+  }
+
+  function startAlarm() {
+    if (!alarm.paused) return;
+    alarm.currentTime = 0;
+    alarm.play().catch(() => {});
+  }
+
+  function stopAlarm() {
+    alarm.pause();
+    alarm.currentTime = 0;
+  }
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+  let killModalMode = 'activate'; // 'activate' | 'rearm'
+  let historyData  = []; // in-memory log for CSV
+
+  // ── Clock ──
+  setInterval(() => {
+    document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-GB');
+  }, 1000);
+
+  // ════════════════════════════════════════
+  //  LOGIN
+  // ════════════════════════════════════════
+  function attemptLogin() {
+    const pw = document.getElementById('pw-input').value;
+    if (pw === DASHBOARD_PASSWORD) {
+      sessionStorage.setItem('auth', '1');
+      unlockAudio();
+      showDashboard();
+    } else {
+      document.getElementById('login-err').textContent = 'Incorrect password. Access denied.';
+      document.getElementById('pw-input').value = '';
+    }
+  }
+
+  document.getElementById('pw-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') attemptLogin();
+  });
+
+  function logout() {
+    sessionStorage.removeItem('auth');
+    document.getElementById('dashboard').classList.remove('visible');
+    document.getElementById('login-screen').classList.remove('hidden');
+  }
+
+  function showDashboard() {
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('dashboard').classList.add('visible');
+    startListeners();
+    checkNotifPermission();
+  }
+
+  // Auto-login if session active
+  window.addEventListener('load', () => {
+    if (sessionStorage.getItem('auth') === '1') {
+      showDashboard();
+    }
+  });
+
+  // ════════════════════════════════════════
+  //  FIREBASE HELPERS
+  // ════════════════════════════════════════
+  function updateDB(path, val) { db.ref(path).set(val); }
+
+  function resetAll() {
+    updateDB('system1', 0); updateDB('system2', 0);
+    updateDB('system3', 0); updateDB('nurse_call', 0);
+  }
+
+  // ════════════════════════════════════════
+  //  LOGGING (local + Firebase /logs)
+  // ════════════════════════════════════════
+  function addLog(message, type = 'alert') {
+    const logDiv = document.getElementById('logs');
+    const now    = new Date().toLocaleTimeString('en-GB');
+    const cls    = type === 'ok' ? 'log-ok' : type === 'kill' ? 'log-kill' : type === 'info' ? 'log-info' : 'log-alert';
+    logDiv.innerHTML = `<div class="log-entry"><span class="log-time">[${now}]</span><span class="${cls}"> ${message}</span></div>` + logDiv.innerHTML;
+  }
+
+  function saveToFirebaseLog(event, status) {
+    const ts = new Date().toISOString();
+    db.ref('logs').push({ timestamp: ts, event, status });
+    historyData.unshift({ timestamp: ts, event, status });
+    renderHistory();
+  }
+
+  // ════════════════════════════════════════
+  //  HISTORY TABLE
+  // ════════════════════════════════════════
+  function renderHistory() {
+    const tbody = document.getElementById('history-body');
+    if (historyData.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="3" style="color:var(--text-dim);text-align:center;padding:16px;">No events recorded yet.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = historyData.map(row => {
+      const d  = new Date(row.timestamp);
+      const ts = d.toLocaleDateString('en-GB') + ' ' + d.toLocaleTimeString('en-GB');
+      const cls = row.status.toLowerCase().includes('breach') || row.status === 'TRIGGERED' ? 'tbl-breach'
+                : row.status === 'SECURE' || row.status === 'IDLE' ? 'tbl-secure'
+                : row.status === 'OVERRIDE' || row.status === 'RE-ARMED' ? 'tbl-kill'
+                : 'tbl-call';
+      return `<tr><td>${ts}</td><td>${row.event}</td><td class="${cls}">${row.status}</td></tr>`;
+    }).join('');
+  }
+
+  // Load existing logs from Firebase on startup
+  function loadFirebaseLogs() {
+    db.ref('logs').orderByChild('timestamp').limitToLast(100).once('value', snap => {
+      if (!snap.exists()) return;
+      historyData = Object.values(snap.val()).reverse();
+      renderHistory();
+    });
+  }
+
+  function exportCSV() {
+    if (historyData.length === 0) { alert('No history to export.'); return; }
+    const header = 'Timestamp,Event,Status\n';
+    const rows   = historyData.map(r => `"${r.timestamp}","${r.event}","${r.status}"`).join('\n');
+    const blob   = new Blob([header + rows], { type: 'text/csv' });
+    const url    = URL.createObjectURL(blob);
+    const a      = document.createElement('a'); a.href = url;
+    a.download   = `ward_log_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+  }
+
+  // ════════════════════════════════════════
+  //  PUSH NOTIFICATIONS
+  // ════════════════════════════════════════
+  function checkNotifPermission() {
+    if (!('Notification' in window)) {
+      document.getElementById('notif-bar').classList.add('hidden'); return;
+    }
+    if (Notification.permission === 'granted') {
+      document.getElementById('notif-bar').classList.add('hidden');
+    }
+  }
+
+  function requestNotifPermission() {
+    Notification.requestPermission().then(perm => {
+      if (perm === 'granted') {
+        document.getElementById('notif-bar').classList.add('hidden');
+        addLog('Push notifications enabled', 'info');
+      }
+    });
+  }
+
+  function sendPushNotification(title, body) {
+    if (Notification.permission !== 'granted') return;
+    new Notification(title, {
+      body,
+      icon: 'https://em-content.zobj.net/source/google/387/hospital_1f3e5.png',
+      badge: 'https://em-content.zobj.net/source/google/387/hospital_1f3e5.png',
+      tag: 'ward-alert',
+      renotify: true
+    });
+  }
+
+  // ════════════════════════════════════════
+  //  FIREBASE LISTENERS
+  // ════════════════════════════════════════
+  let prevState = {};
+
+  function setupListener(path, elementId, label) {
+    db.ref(path).on('value', snap => {
+      const val   = snap.val();
+      const el    = document.getElementById(elementId);
+      const prev  = prevState[path];
+      prevState[path] = val;
+
+      const isNurse = path === 'nurse_call';
+
+      if (val === 1) {
+        el.innerText = isNurse ? '🔔 ACTIVE' : '🚨 BREACH';
+        el.className = isNurse ? 'badge badge-call' : 'badge badge-breach';
+
+        if (prev !== 1) {
+          const status = isNurse ? 'TRIGGERED' : 'BREACH';
+          addLog(`${label} Triggered`, 'alert');
+          saveToFirebaseLog(label, status);
+          sendPushNotification(`⚠ ${label}`, isNurse ? 'Technician call button pressed.' : 'Security breach detected!');
+        }
+      } else {
+        el.innerText = isNurse ? 'IDLE' : 'SECURE ✓';
+        el.className = 'badge badge-secure';
+
+        if (prev === 1) {
+          addLog(`${label} Cleared`, 'ok');
+          saveToFirebaseLog(label, isNurse ? 'IDLE' : 'SECURE');
+        }
+      }
+
+      checkGlobalState();
+    });
+  }
+
+  function checkGlobalState() {
+    Promise.all([
+      db.ref('system1').once('value'),
+      db.ref('system2').once('value'),
+      db.ref('system3').once('value'),
+      db.ref('nurse_call').once('value')
+    ]).then(([s1, s2, s3, nc]) => {
+      const v1 = s1.val(), v2 = s2.val(), v3 = s3.val(), vn = nc.val();
+      const anyActive = v1 == 1 || v2 == 1 || v3 == 1 || vn == 1;
+      if (anyActive && !killActive) {
+        const nurseOnly = vn == 1 && v1 != 1 && v2 != 1 && v3 != 1;
+        document.body.style.backgroundColor = nurseOnly ? '#1a1500' : '#1a0008';
+        startAlarm();
+      } else {
+        document.body.style.backgroundColor = '';
+        stopAlarm();
+      }
+    });
+  }
+
+  // Killswitch listener
+  function setupKillswitchListener() {
+    db.ref('killswitch').on('value', snap => {
+      killActive = snap.val() === true;
+      const dot   = document.getElementById('kill-dot');
+      const label = document.getElementById('kill-state-label');
+      const desc  = document.getElementById('kill-desc');
+      const banner = document.getElementById('override-banner');
+      const killBtn  = document.getElementById('kill-btn');
+      const rearmBtn = document.getElementById('rearm-btn');
+
+      if (killActive) {
+        dot.classList.add('active');
+        label.textContent = 'OVERRIDE ACTIVE';
+        label.style.color = 'var(--kill)';
+        desc.textContent  = 'Hardware silenced';
+        banner.classList.add('visible');
+        killBtn.classList.add('hidden');
+        rearmBtn.classList.remove('hidden');
+        // mute alarm during override
+        stopAlarm();
+        document.body.style.backgroundColor = '';
+      } else {
+        dot.classList.remove('active');
+        label.textContent = 'ARMED — SYSTEMS NOMINAL';
+        label.style.color = '';
+        desc.textContent  = 'Monitoring active';
+        banner.classList.remove('visible');
+        killBtn.classList.remove('hidden');
+        rearmBtn.classList.add('hidden');
+      }
+    });
+  }
+
+  function startListeners() {
+    setupListener('system1',    's1_badge',    'System 1 Breach');
+    setupListener('system2',    's2_badge',    'System 2 Breach');
+    setupListener('system3',    's3_badge',    'System 3 Breach');
+    setupListener('nurse_call', 'nurse_badge', 'Technician Call');
+    setupKillswitchListener();
+    loadFirebaseLogs();
+  }
+
+  // ════════════════════════════════════════
+  //  KILLSWITCH MODAL
+  // ════════════════════════════════════════
+  function openKillModal(mode) {
+    killModalMode = mode;
+    clearPinInputs();
+    document.getElementById('modal-err').textContent = '';
+    document.getElementById('modal-title').textContent = mode === 'activate' ? '☠ Activate Killswitch' : '↺ Re-Arm Systems';
+    document.getElementById('modal-sub').textContent  = mode === 'activate'
+      ? 'Enter admin PIN to override and silence all hardware.'
+      : 'Enter admin PIN to re-arm systems and resume monitoring.';
+    document.getElementById('modal-confirm-btn').textContent = mode === 'activate' ? 'Confirm Override' : 'Confirm Re-Arm';
+    document.getElementById('kill-modal').classList.remove('hidden');
+    document.getElementById('p0').focus();
+  }
+
+  function closeKillModal() {
+    document.getElementById('kill-modal').classList.add('hidden');
+    clearPinInputs();
+  }
+
+  function clearPinInputs() {
+    ['p0','p1','p2','p3'].forEach(id => document.getElementById(id).value = '');
+  }
+
+  // PIN auto-advance
+  ['p0','p1','p2','p3'].forEach((id, i) => {
+    document.getElementById(id).addEventListener('input', e => {
+      const val = e.target.value.replace(/\D/g, '');
+      e.target.value = val;
+      if (val && i < 3) document.getElementById(`p${i+1}`).focus();
+    });
+    document.getElementById(id).addEventListener('keydown', e => {
+      if (e.key === 'Backspace' && !e.target.value && i > 0) document.getElementById(`p${i-1}`).focus();
+      if (e.key === 'Enter') confirmKill();
+    });
+  });
+
+  function confirmKill() {
+    const pin = ['p0','p1','p2','p3'].map(id => document.getElementById(id).value).join('');
+    if (pin.length < 4) {
+      document.getElementById('modal-err').textContent = 'Please enter all 4 digits.'; return;
+    }
+    if (pin !== ADMIN_PIN) {
+      document.getElementById('modal-err').textContent = 'Incorrect PIN. Access denied.';
+      clearPinInputs();
+      document.getElementById('p0').focus();
+      return;
+    }
+
+    closeKillModal();
+
+    if (killModalMode === 'activate') {
+      db.ref('killswitch').set(true);
+      addLog('KILLSWITCH ACTIVATED by operator', 'kill');
+      saveToFirebaseLog('Killswitch', 'OVERRIDE');
+      sendPushNotification('☠ Killswitch Activated', 'All hardware overridden by operator.');
+    } else {
+      db.ref('killswitch').set(false);
+      addLog('Systems re-armed by operator', 'ok');
+      saveToFirebaseLog('Killswitch', 'RE-ARMED');
+      sendPushNotification('✓ Systems Re-Armed', 'Ward monitoring resumed.');
+    }
+  }
+</script>
+</body>
+</html>
