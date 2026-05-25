@@ -48,7 +48,6 @@
       z-index: 9999;
     }
 
-    /* LOGIN */
     #login-screen {
       position: fixed; inset: 0;
       background: var(--bg);
@@ -140,7 +139,6 @@
       min-height: 18px;
     }
 
-    /* DASHBOARD */
     #dashboard { display: none; padding: 24px; max-width: 1200px; margin: 0 auto; }
     #dashboard.visible { display: block; }
 
@@ -317,6 +315,7 @@
     .metric-warn { color: var(--warn); }
     .metric-bad { color: var(--danger); }
     .quality-note { font-size: 0.75rem; color: var(--text-dim); line-height: 1.4; margin-top: 8px; padding: 8px; background: #07090f; border-radius: 3px; }
+    .ai-analysis { font-size: 0.75rem; color: var(--accent); line-height: 1.4; margin-top: 12px; padding: 10px; background: #07090f; border-radius: 3px; border-left: 2px solid var(--accent); font-style: italic; }
   </style>
 </head>
 <body>
@@ -357,7 +356,7 @@
     </div>
 
     <div class="card">
-      <div class="card-title">Quality Evaluation</div>
+      <div class="card-title">Quality Evaluation (AI-Powered)</div>
       <div class="metric-row">
         <div class="metric-box">
           <div class="metric-label">Today's Quality</div>
@@ -379,6 +378,7 @@
         </div>
       </div>
       <div class="quality-note" id="quality-note">No alerts today. System performing nominally.</div>
+      <div class="ai-analysis" id="ai-analysis"></div>
     </div>
 
     <div class="card">
@@ -391,14 +391,6 @@
       </div>
       <div class="card-title" style="margin-top:18px;">Activity Log</div>
       <div id="log-container"><div id="logs"></div></div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Local AI Analysis (Ollama)</div>
-      <div style="background: #07090f; padding: 10px; border-radius: 3px; margin-bottom: 12px;">
-        <div style="font-size: 0.8rem; line-height: 1.4; color: #8ab0cc;" id="ollama-result">Keep Ollama app running</div>
-      </div>
-      <button class="btn btn-export" onclick="analyzeWithOllama(historyData)">▶ Analyze with Ollama</button>
     </div>
 
     <div class="card">
@@ -525,7 +517,37 @@
     calculateQualityScore();
   }
 
-  function calculateQualityScore() {
+  async function getOllamaAnalysis(metrics) {
+    try {
+      const prompt = `Analyze this hospital ward monitoring data and provide a brief risk prediction:
+
+Air Quality alerts: ${metrics.system1Count}
+Temperature alerts: ${metrics.system2Count}
+Sterilization alerts: ${metrics.system3Count}
+Tech calls: ${metrics.nurseCalls}
+
+Provide a one-sentence prediction about system failure risk and recommended action. Be brief and clinical.`;
+
+      const response = await fetch('http://127.0.0.1:11434/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'tinyllama',
+          prompt: prompt,
+          stream: false
+        })
+      });
+
+      if (!response.ok) throw new Error('Ollama offline');
+      
+      const data = await response.json();
+      return data.response.trim().substring(0, 150);
+    } catch (err) {
+      return 'Ollama offline - using statistical analysis only';
+    }
+  }
+
+  async function calculateQualityScore() {
     const totalAlerts = dailyMetrics.system1Count + dailyMetrics.system2Count + dailyMetrics.system3Count + dailyMetrics.nurseCalls;
     const baselineAlerts = 5;
     const alertCost = Math.max(0, (totalAlerts - baselineAlerts) * 10);
@@ -575,6 +597,15 @@
       noteEl.textContent = `${totalAlerts} alerts within acceptable range. All systems stable.`;
     } else {
       noteEl.textContent = `${totalAlerts} alerts detected. Monitor for patterns. Quality: ${quality}%.`;
+    }
+
+    // Get AI analysis from Ollama
+    const aiAnalysis = await getOllamaAnalysis(dailyMetrics);
+    const aiEl = document.getElementById('ai-analysis');
+    if (aiAnalysis && aiAnalysis !== 'Ollama offline - using statistical analysis only') {
+      aiEl.textContent = '🤖 AI PREDICTION: ' + aiAnalysis;
+    } else {
+      aiEl.textContent = '';
     }
   }
 
@@ -653,73 +684,6 @@
   function sendPushNotification(title, body) {
     if (Notification.permission === 'granted') new Notification(title, { body });
   }
-
-  async function analyzeWithOllama(historyData) {
-  const output = document.getElementById("ollama-result");
-
-  output.innerHTML = "Analyzing local ward history...";
-
-  try {
-    const summary = historyData
-      .slice(-15)
-      .map(e => `${e.time} | ${e.event} | ${e.status}`)
-      .join("\n");
-
-    const prompt = `
-You are a hospital monitoring AI.
-
-Analyze this ward monitoring history and provide:
-1. Risk level
-2. Most problematic system
-3. Recommended action
-4. Short technical summary
-
-Logs:
-${summary}
-`;
-
-    const response = await fetch("http://127.0.0.1:11434/api/generate", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "tinyllama",
-        prompt: prompt,
-        stream: false
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error("Ollama connection failed");
-    }
-
-    const data = await response.json();
-
-    output.innerHTML = `
-      <div style="color:#00e676; font-weight:bold; margin-bottom:8px;">
-        AI ANALYSIS COMPLETE
-      </div>
-      <div style="white-space: pre-wrap; line-height:1.5;">
-        ${data.response}
-      </div>
-    `;
-
-  } catch (err) {
-    output.innerHTML = `
-      <span style="color:#ff3b5c;">
-        Ollama Offline / Connection Failed
-      </span>
-      <br><br>
-      Make sure:
-      <br>• Ollama app is running
-      <br>• Model is installed
-      <br>• localhost:11434 is accessible
-    `;
-
-    console.error(err);
-  }
-}
 
   function exportCSV() {
     if (historyData.length === 0) return;
