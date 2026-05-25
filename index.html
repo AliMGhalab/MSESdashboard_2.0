@@ -241,7 +241,7 @@
     .btn-nurse:hover { background: var(--warn); color: #000; }
     .btn-reset { background: var(--surface2); color: var(--accent); border: 1px solid var(--border); width: 100%; margin-top: 16px; }
     .btn-reset:hover { border-color: var(--accent); box-shadow: 0 0 12px rgba(0,212,255,0.15); }
-    .btn-export { background: var(--surface2); color: var(--success); border: 1px solid rgba(0,230,118,0.25); margin-top: 12px; }
+    .btn-export { background: var(--surface2); color: var(--success); border: 1px solid rgba(0,230,118,0.25); margin-top: 12px; width: 100%; }
     .btn-export:hover { background: var(--success-bg); }
 
     .sim-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -283,9 +283,6 @@
     }
     td { padding: 7px 10px; border-bottom: 1px solid #0d1520; color: #8ab0cc; }
     tr:hover td { background: var(--surface2); }
-    .tbl-breach { color: var(--danger); }
-    .tbl-secure { color: var(--success); }
-    .tbl-call { color: var(--warn); }
 
     #notif-bar {
       background: rgba(0,212,255,0.08);
@@ -312,7 +309,6 @@
     }
     .hidden { display: none !important; }
 
-    /* Quality metrics */
     .metric-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
     .metric-box { background: #07090f; padding: 10px; border-radius: 3px; border-left: 2px solid var(--accent); }
     .metric-label { font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
@@ -320,7 +316,6 @@
     .metric-good { color: var(--success); }
     .metric-warn { color: var(--warn); }
     .metric-bad { color: var(--danger); }
-
     .quality-note { font-size: 0.75rem; color: var(--text-dim); line-height: 1.4; margin-top: 8px; padding: 8px; background: #07090f; border-radius: 3px; }
   </style>
 </head>
@@ -399,6 +394,14 @@
     </div>
 
     <div class="card">
+      <div class="card-title">Local AI Analysis (Ollama)</div>
+      <div style="background: #07090f; padding: 10px; border-radius: 3px; margin-bottom: 12px;">
+        <div style="font-size: 0.8rem; line-height: 1.4; color: #8ab0cc;" id="ollama-result">Keep Ollama app running</div>
+      </div>
+      <button class="btn btn-export" onclick="analyzeWithOllama(historyData)">▶ Analyze with Ollama</button>
+    </div>
+
+    <div class="card">
       <div class="card-title">Notification History</div>
       <div class="history-wrap">
         <table>
@@ -432,13 +435,11 @@
   let historyData = [];
   let prevState = {};
   
-  // Quality tracking
   let dailyMetrics = {
     system1Count: 0,
     system2Count: 0,
     system3Count: 0,
     nurseCalls: 0,
-    clusterEvents: 0,
     degradedSystems: [],
     startTime: new Date()
   };
@@ -465,7 +466,6 @@
     if ("vibrate" in navigator) navigator.vibrate(0);
   }
 
-  // LOGIN
   function attemptLogin() {
     const pw = document.getElementById('pw-input').value;
     if (pw === DASHBOARD_PASSWORD) {
@@ -493,7 +493,6 @@
     if (sessionStorage.getItem('auth') === '1') showDashboard();
   });
 
-  // FIREBASE
   function updateDB(path, val) { db.ref(path).set(val); }
 
   function resetAll() {
@@ -519,24 +518,19 @@
   }
 
   function updateQualityMetrics(event) {
-    // Count alerts per system
     if (event.includes('Air Quality')) dailyMetrics.system1Count++;
     if (event.includes('Temperature')) dailyMetrics.system2Count++;
     if (event.includes('Sterilization')) dailyMetrics.system3Count++;
     if (event.includes('Tech Call')) dailyMetrics.nurseCalls++;
-
     calculateQualityScore();
   }
 
   function calculateQualityScore() {
     const totalAlerts = dailyMetrics.system1Count + dailyMetrics.system2Count + dailyMetrics.system3Count + dailyMetrics.nurseCalls;
-    
-    // Baseline: 5 alerts/day is acceptable. Each additional alert costs 10 points.
     const baselineAlerts = 5;
     const alertCost = Math.max(0, (totalAlerts - baselineAlerts) * 10);
     const quality = Math.max(0, 100 - alertCost);
 
-    // Check for degraded systems (8+ alerts = degraded performance)
     const systems = [
       { name: 'Air Quality', count: dailyMetrics.system1Count },
       { name: 'Temperature', count: dailyMetrics.system2Count },
@@ -545,12 +539,10 @@
     
     dailyMetrics.degradedSystems = systems.filter(s => s.count >= 8).map(s => s.name);
     
-    // Determine risk level
     let riskLevel = 'LOW';
     if (dailyMetrics.degradedSystems.length > 0) riskLevel = 'HIGH';
     else if (totalAlerts > 15) riskLevel = 'MEDIUM';
 
-    // Update UI
     const scoreEl = document.getElementById('quality-score');
     scoreEl.textContent = quality + '%';
     scoreEl.className = 'metric-value';
@@ -565,7 +557,6 @@
       riskLevel === 'MEDIUM' ? 'var(--warn)' : 
       'var(--danger)';
 
-    // Display worst system
     if (dailyMetrics.degradedSystems.length > 0) {
       document.getElementById('worst-system').textContent = dailyMetrics.degradedSystems[0];
     } else if (Math.max(...systems.map(s => s.count)) === 0) {
@@ -575,16 +566,15 @@
       document.getElementById('worst-system').textContent = worst.name + ' (' + worst.count + ')';
     }
 
-    // Quality note
     const noteEl = document.getElementById('quality-note');
     if (dailyMetrics.degradedSystems.length > 0) {
-      noteEl.textContent = `⚠ ${dailyMetrics.degradedSystems.join(', ')} showing elevated alert frequency (8+ today). Recommend technician review.`;
+      noteEl.textContent = `⚠ ${dailyMetrics.degradedSystems.join(', ')} showing elevated alerts (8+ today). Recommend technician review.`;
     } else if (totalAlerts === 0) {
       noteEl.textContent = 'No alerts today. System performing nominally.';
     } else if (quality >= 80) {
       noteEl.textContent = `${totalAlerts} alerts within acceptable range. All systems stable.`;
     } else {
-      noteEl.textContent = `${totalAlerts} alerts detected. Monitor for patterns. Quality score: ${quality}%.`;
+      noteEl.textContent = `${totalAlerts} alerts detected. Monitor for patterns. Quality: ${quality}%.`;
     }
   }
 
@@ -654,7 +644,6 @@
     setupListener('nurse_call', 'nurse_badge', 'Tech Call');
   }
 
-  // NOTIFICATIONS
   function checkNotifPermission() {
     if (Notification.permission === 'granted') document.getElementById('notif-bar').classList.add('hidden');
   }
@@ -663,6 +652,38 @@
   }
   function sendPushNotification(title, body) {
     if (Notification.permission === 'granted') new Notification(title, { body });
+  }
+
+  async function analyzeWithOllama(logs) {
+    if (logs.length === 0) {
+      document.getElementById('ollama-result').textContent = 'No alerts to analyze.';
+      return;
+    }
+    
+    document.getElementById('ollama-result').textContent = 'Analyzing with Ollama...';
+    
+    const prompt = `Analyze these ${logs.length} ward alerts:
+${logs.slice(0, 8).map(l => `- ${l.event}`).join('\n')}
+
+Respond JSON only: {"pattern": "<brief observation>", "concern": "<if any>", "action": "<recommendation>"}`;
+
+    try {
+      const response = await fetch('http://localhost:11434/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'qwen3.5',
+          prompt: prompt,
+          stream: false
+        })
+      });
+
+      const data = await response.json();
+      const result = JSON.parse(data.response);
+      document.getElementById('ollama-result').textContent = result.pattern + ' — ' + (result.concern || 'No concerns');
+    } catch (err) {
+      document.getElementById('ollama-result').textContent = 'Ollama not running. Keep the Ollama app open.';
+    }
   }
 
   function exportCSV() {
