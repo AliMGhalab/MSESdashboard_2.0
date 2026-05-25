@@ -668,7 +668,7 @@ ${logs.slice(0, 8).map(l => `- ${l.event}`).join('\n')}
 Respond JSON only: {"pattern": "<brief observation>", "concern": "<if any>", "action": "<recommendation>"}`;
 
     try {
-      const response = await fetch('http://localhost:11434/api/generate', {
+      const response = await fetch('https://cors-anywhere.herokuapp.com/http://localhost:11434/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -682,7 +682,7 @@ Respond JSON only: {"pattern": "<brief observation>", "concern": "<if any>", "ac
       const result = JSON.parse(data.response);
       document.getElementById('ollama-result').textContent = result.pattern + ' — ' + (result.concern || 'No concerns');
     } catch (err) {
-      document.getElementById('ollama-result').textContent = 'Ollama not running. Keep the Ollama app open.';
+      document.getElementById('ollama-result').textContent = 'Ollama connection failed. Keep app open and check Ollama is running.';
     }
   }
 
