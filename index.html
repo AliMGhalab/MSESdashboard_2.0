@@ -1,440 +1,24 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hospital Ward Management Subsystem</title>
-
-  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
-
-  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@300;500;700;900&display=swap" rel="stylesheet" />
-
-  <style>
-    :root {
-      --bg: #0a0e1a;
-      --surface: #111827;
-      --surface2: #1a2235;
-      --border: #1e2d45;
-      --accent: #00d4ff;
-      --accent2: #0099bb;
-      --danger: #ff3b5c;
-      --danger-bg: rgba(255,59,92,0.12);
-      --warn: #ffaa00;
-      --warn-bg: rgba(255,170,0,0.12);
-      --success: #00e676;
-      --success-bg: rgba(0,230,118,0.1);
-      --text: #e2eaf5;
-      --text-dim: #5a7a9a;
-      --mono: 'Share Tech Mono', monospace;
-      --ui: 'Exo 2', sans-serif;
-    }
-
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: var(--ui);
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
-
-    body::before {
-      content: '';
-      position: fixed; inset: 0;
-      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,212,255,0.015) 2px, rgba(0,212,255,0.015) 4px);
-      pointer-events: none;
-      z-index: 9999;
-    }
-
-    /* LOGIN */
-    #login-screen {
-      position: fixed; inset: 0;
-      background: var(--bg);
-      display: flex; align-items: center; justify-content: center;
-      z-index: 1000;
-      flex-direction: column;
-    }
-    #login-screen.hidden { display: none; }
-
-    .login-box {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-top: 3px solid var(--accent);
-      padding: 48px 44px 40px;
-      border-radius: 4px;
-      width: 360px;
-      position: relative;
-      box-shadow: 0 0 60px rgba(0,212,255,0.07);
-    }
-    .login-box::after {
-      content: '';
-      position: absolute;
-      top: -3px; left: 40px; right: 40px;
-      height: 3px;
-      background: var(--accent);
-      filter: blur(6px);
-    }
-    .login-logo {
-      font-family: var(--ui);
-      font-weight: 900;
-      font-size: 1.05rem;
-      letter-spacing: 0.2em;
-      color: var(--accent);
-      text-transform: uppercase;
-      margin-bottom: 6px;
-    }
-    .login-sub {
-      font-size: 0.72rem;
-      letter-spacing: 0.18em;
-      color: var(--text-dim);
-      margin-bottom: 36px;
-      text-transform: uppercase;
-    }
-    .login-label {
-      font-size: 0.7rem;
-      letter-spacing: 0.15em;
-      color: var(--text-dim);
-      text-transform: uppercase;
-      margin-bottom: 8px;
-      display: block;
-    }
-    .login-input {
-      width: 100%;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 3px;
-      padding: 12px 14px;
-      color: var(--text);
-      font-family: var(--mono);
-      font-size: 1rem;
-      letter-spacing: 0.1em;
-      outline: none;
-      transition: border-color 0.2s;
-      margin-bottom: 24px;
-    }
-    .login-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,212,255,0.1); }
-    .login-btn {
-      width: 100%;
-      background: var(--accent);
-      color: #000;
-      font-family: var(--ui);
-      font-weight: 700;
-      font-size: 0.85rem;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      border: none;
-      border-radius: 3px;
-      padding: 13px;
-      cursor: pointer;
-      transition: background 0.2s, box-shadow 0.2s;
-    }
-    .login-btn:hover { background: #33ddff; box-shadow: 0 0 20px rgba(0,212,255,0.3); }
-    .login-err {
-      color: var(--danger);
-      font-size: 0.75rem;
-      letter-spacing: 0.1em;
-      margin-top: 12px;
-      text-align: center;
-      min-height: 18px;
-    }
-
-    /* DASHBOARD */
-    #dashboard { display: none; padding: 24px; max-width: 1200px; margin: 0 auto; }
-    #dashboard.visible { display: block; }
-
-    .top-bar {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 28px;
-      padding-bottom: 18px;
-      border-bottom: 1px solid var(--border);
-    }
-    .top-title {
-      font-weight: 900;
-      font-size: 1.1rem;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: var(--accent);
-    }
-    .top-title span { color: var(--text-dim); font-weight: 300; }
-    .top-right { display: flex; align-items: center; gap: 14px; }
-    .clock { font-family: var(--mono); font-size: 0.8rem; color: var(--text-dim); letter-spacing: 0.1em; }
-    .logout-btn {
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--text-dim);
-      font-family: var(--ui);
-      font-size: 0.7rem;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      padding: 7px 14px;
-      border-radius: 3px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .logout-btn:hover { border-color: var(--danger); color: var(--danger); }
-
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-    @media (max-width: 700px) { .grid { grid-template-columns: 1fr; } }
-
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 22px;
-      position: relative;
-      overflow: hidden;
-    }
-    .card::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 2px;
-      background: linear-gradient(90deg, transparent, var(--accent), transparent);
-      opacity: 0.4;
-    }
-    .card-title {
-      font-size: 0.65rem;
-      font-weight: 700;
-      letter-spacing: 0.25em;
-      text-transform: uppercase;
-      color: var(--text-dim);
-      margin-bottom: 18px;
-    }
-
-    .status-item {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 11px 0;
-      border-bottom: 1px solid var(--border);
-    }
-    .status-item:last-of-type { border-bottom: none; }
-    .status-label { font-size: 0.85rem; font-weight: 500; letter-spacing: 0.05em; }
-    .badge {
-      font-family: var(--mono);
-      font-size: 0.72rem;
-      font-weight: bold;
-      padding: 4px 12px;
-      border-radius: 2px;
-      letter-spacing: 0.1em;
-    }
-    .badge-secure { background: var(--success-bg); color: var(--success); border: 1px solid rgba(0,230,118,0.25); }
-    .badge-breach { background: var(--danger-bg); color: var(--danger); border: 1px solid rgba(255,59,92,0.35); animation: blink 0.8s infinite; }
-    .badge-call { background: var(--warn-bg); color: var(--warn); border: 1px solid rgba(255,170,0,0.35); animation: blink 0.8s infinite; }
-    @keyframes blink { 50% { opacity: 0.4; } }
-
-    .btn {
-      font-family: var(--ui);
-      font-weight: 700;
-      font-size: 0.75rem;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      padding: 10px 16px;
-      border: none;
-      border-radius: 3px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .btn-breach { background: var(--danger-bg); color: var(--danger); border: 1px solid rgba(255,59,92,0.3); }
-    .btn-breach:hover { background: var(--danger); color: #fff; }
-    .btn-nurse { background: var(--warn-bg); color: var(--warn); border: 1px solid rgba(255,170,0,0.3); }
-    .btn-nurse:hover { background: var(--warn); color: #000; }
-    .btn-reset { background: var(--surface2); color: var(--accent); border: 1px solid var(--border); width: 100%; margin-top: 16px; }
-    .btn-reset:hover { border-color: var(--accent); box-shadow: 0 0 12px rgba(0,212,255,0.15); }
-    .btn-export { background: var(--surface2); color: var(--success); border: 1px solid rgba(0,230,118,0.25); margin-top: 12px; width: 100%; }
-    .btn-export:hover { background: var(--success-bg); }
-
-    .sim-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-
-    #log-container {
-      height: 180px;
-      overflow-y: auto;
-      background: #07090f;
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 12px;
-      font-family: var(--mono);
-      font-size: 0.75rem;
-      margin-top: 8px;
-    }
-    #log-container::-webkit-scrollbar { width: 4px; }
-    #log-container::-webkit-scrollbar-track { background: transparent; }
-    #log-container::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-    .log-entry { padding: 4px 0; border-bottom: 1px solid #0d1520; color: #8ab0cc; }
-    .log-time { color: var(--text-dim); margin-right: 8px; }
-    .log-alert { color: var(--danger); }
-    .log-ok { color: var(--success); }
-    .log-info { color: var(--accent); }
-
-    .history-wrap { max-height: 220px; overflow-y: auto; margin-top: 8px; }
-    .history-wrap::-webkit-scrollbar { width: 4px; }
-    .history-wrap::-webkit-scrollbar-thumb { background: var(--border); }
-    table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
-    th {
-      font-family: var(--mono);
-      font-size: 0.65rem;
-      letter-spacing: 0.12em;
-      color: var(--text-dim);
-      text-align: left;
-      padding: 7px 10px;
-      border-bottom: 1px solid var(--border);
-      background: var(--bg);
-      position: sticky; top: 0;
-    }
-    td { padding: 7px 10px; border-bottom: 1px solid #0d1520; color: #8ab0cc; }
-    tr:hover td { background: var(--surface2); }
-
-    #notif-bar {
-      background: rgba(0,212,255,0.08);
-      border: 1px solid rgba(0,212,255,0.2);
-      border-radius: 4px;
-      padding: 10px 16px;
-      font-size: 0.75rem;
-      color: var(--accent);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 20px;
-    }
-    #notif-bar.hidden { display: none; }
-    .notif-bar-btn {
-      background: var(--accent);
-      color: #000;
-      border: none;
-      border-radius: 3px;
-      padding: 6px 14px;
-      font-size: 0.7rem;
-      font-weight: 700;
-      cursor: pointer;
-    }
-    .hidden { display: none !important; }
-
-    .metric-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
-    .metric-box { background: #07090f; padding: 10px; border-radius: 3px; border-left: 2px solid var(--accent); }
-    .metric-label { font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
-    .metric-value { font-size: 18px; font-weight: 700; color: var(--accent); }
-    .metric-good { color: var(--success); }
-    .metric-warn { color: var(--warn); }
-    .metric-bad { color: var(--danger); }
-    .quality-note { font-size: 0.75rem; color: var(--text-dim); line-height: 1.4; margin-top: 8px; padding: 8px; background: #07090f; border-radius: 3px; }
-  </style>
-</head>
-<body>
-
-<div id="login-screen">
-  <div class="login-box">
-    <div class="login-logo">⬡ Ward Monitoring System</div>
-    <div class="login-sub">Ward Monitoring Subsystem · Secure Access</div>
-    <label class="login-label" for="pw-input">Access Password</label>
-    <input class="login-input" type="password" id="pw-input" placeholder="Enter password" />
-    <button class="login-btn" onclick="attemptLogin()">Authenticate</button>
-    <div class="login-err" id="login-err"></div>
-  </div>
-</div>
-
-<div id="dashboard">
-  <div class="top-bar">
-    <div class="top-title">⬡ Ward Monitoring System <span>/ Ward Subsystem</span></div>
-    <div class="top-right">
-      <div class="clock" id="clock">--:--:--</div>
-      <button class="logout-btn" onclick="logout()">Logout</button>
-    </div>
-  </div>
-
-  <div id="notif-bar">
-    <span>🔔 Enable push notifications to receive alerts when this tab is inactive</span>
-    <button class="notif-bar-btn" onclick="requestNotifPermission()">Enable</button>
-  </div>
-
-  <div class="grid">
-    <div class="card">
-      <div class="card-title">Live System Status</div>
-      <div class="status-item"><span class="status-label">System 1: Air Quality</span><span id="s1_badge" class="badge badge-secure">NORMAL ✓</span></div>
-      <div class="status-item"><span class="status-label">System 2: Temperature</span><span id="s2_badge" class="badge badge-secure">NORMAL ✓</span></div>
-      <div class="status-item"><span class="status-label">System 3: Sterilization</span><span id="s3_badge" class="badge badge-secure">NORMAL ✓</span></div>
-      <div class="status-item"><span class="status-label">Technician Call</span><span id="nurse_badge" class="badge badge-secure">IDLE</span></div>
-      <button class="btn btn-reset" onclick="resetAll()">↺ System Reset / Mute</button>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Quality Evaluation</div>
-      <div class="metric-row">
-        <div class="metric-box">
-          <div class="metric-label">Today's Quality</div>
-          <div class="metric-value" id="quality-score">100%</div>
-        </div>
-        <div class="metric-box" style="border-left-color: var(--warn);">
-          <div class="metric-label">Alert Count</div>
-          <div class="metric-value" id="alert-count" style="color: var(--warn);">0</div>
-        </div>
-      </div>
-      <div class="metric-row">
-        <div class="metric-box" style="border-left-color: var(--danger);">
-          <div class="metric-label">Worst System</div>
-          <div class="metric-value metric-bad" id="worst-system" style="font-size: 14px;">All Clear</div>
-        </div>
-        <div class="metric-box" style="border-left-color: var(--accent2);">
-          <div class="metric-label">Risk Level</div>
-          <div class="metric-value" id="risk-level" style="color: var(--success); font-size: 14px;">LOW</div>
-        </div>
-      </div>
-      <div class="quality-note" id="quality-note">No alerts today. System performing nominally.</div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Simulation Controls</div>
-      <div class="sim-grid">
-        <button class="btn btn-breach" onclick="updateDB('system1', 1)">Trigger: Air Quality</button>
-        <button class="btn btn-breach" onclick="updateDB('system2', 1)">Trigger: Temperature</button>
-        <button class="btn btn-breach" onclick="updateDB('system3', 1)">Trigger: Sterilization</button>
-        <button class="btn btn-nurse" onclick="updateDB('nurse_call', 1)">🔔 Technician Call</button>
-      </div>
-      <div class="card-title" style="margin-top:18px;">Activity Log</div>
-      <div id="log-container"><div id="logs"></div></div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Local AI Analysis (Ollama)</div>
-      <div style="background: #07090f; padding: 10px; border-radius: 3px; margin-bottom: 12px;">
-        <div style="font-size: 0.8rem; line-height: 1.4; color: #8ab0cc;" id="ollama-result">Keep Ollama app running</div>
-      </div>
-      <button class="btn btn-export" onclick="analyzeWithOllama(historyData)">▶ Analyze with Ollama</button>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Notification History</div>
-      <div class="history-wrap">
-        <table>
-          <thead><tr><th>Timestamp</th><th>Event</th><th>Status</th></tr></thead>
-          <tbody id="history-body"></tbody>
-        </table>
-      </div>
-      <button class="btn btn-export" onclick="exportCSV()">↓ Export Log as CSV</button>
-    </div>
-  </div>
-</div>
-
-<audio id="alarmSound" loop><source src="alert.mp3" type="audio/mpeg"></audio>
-
 <script>
   const DASHBOARD_PASSWORD = "ward2024";
 
   const firebaseConfig = {
-    apiKey:            "AIzaSyCePnTRSWFX-R0n4iIMLHIr0PZjk-WcHco",
-    authDomain:        "msesalert-b972d.firebaseapp.com",
-    databaseURL:       "https://msesalert-b972d-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId:         "msesalert-b972d",
-    storageBucket:     "msesalert-b972d.firebasestorage.app",
+    apiKey: "AIzaSyCePnTRSWFX-R0n4iIMLHIr0PZjk-WcHco",
+    authDomain: "msesalert-b972d.firebaseapp.com",
+    databaseURL: "https://msesalert-b972d-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "msesalert-b972d",
+    storageBucket: "msesalert-b972d.firebasestorage.app",
     messagingSenderId: "992963491194",
-    appId:             "1:992963491194:web:f0d0b95343114e067e52c3"
+    appId: "1:992963491194:web:f0d0b95343114e067e52c3"
   };
 
   firebase.initializeApp(firebaseConfig);
+
   const db = firebase.database();
   const alarm = document.getElementById('alarmSound');
+
   let historyData = [];
   let prevState = {};
-  
+
   let dailyMetrics = {
     system1Count: 0,
     system2Count: 0,
@@ -446,41 +30,61 @@
 
   function primeSystems() {
     alarm.volume = 0;
+
     alarm.play().then(() => {
       alarm.pause();
       alarm.currentTime = 0;
       alarm.volume = 1;
     }).catch(() => {});
-    if ("vibrate" in navigator) navigator.vibrate(20);
+
+    if ("vibrate" in navigator) {
+      navigator.vibrate(20);
+    }
   }
 
   function startAlarm() {
     if (!alarm.paused) return;
+
     alarm.play().catch(() => {});
-    if ("vibrate" in navigator) navigator.vibrate([500, 200, 500, 200, 500, 200, 500]);
+
+    if ("vibrate" in navigator) {
+      navigator.vibrate([500, 200, 500, 200, 500]);
+    }
   }
 
   function stopAlarm() {
     alarm.pause();
     alarm.currentTime = 0;
-    if ("vibrate" in navigator) navigator.vibrate(0);
+
+    if ("vibrate" in navigator) {
+      navigator.vibrate(0);
+    }
   }
 
   function attemptLogin() {
     const pw = document.getElementById('pw-input').value;
+
     if (pw === DASHBOARD_PASSWORD) {
+
       sessionStorage.setItem('auth', '1');
+
       primeSystems();
+
       showDashboard();
+
     } else {
-      document.getElementById('login-err').textContent = 'Incorrect password.';
+
+      document.getElementById('login-err').textContent =
+        'Incorrect password.';
     }
   }
 
   function showDashboard() {
     document.getElementById('login-screen').classList.add('hidden');
     document.getElementById('dashboard').classList.add('visible');
+
     startListeners();
+
     checkNotifPermission();
   }
 
@@ -490,10 +94,16 @@
   }
 
   window.addEventListener('load', () => {
-    if (sessionStorage.getItem('auth') === '1') showDashboard();
+
+    if (sessionStorage.getItem('auth') === '1') {
+      showDashboard();
+    }
+
   });
 
-  function updateDB(path, val) { db.ref(path).set(val); }
+  function updateDB(path, val) {
+    db.ref(path).set(val);
+  }
 
   function resetAll() {
     updateDB('system1', 0);
@@ -503,200 +113,324 @@
   }
 
   function addLog(message, type = 'alert') {
+
     const logDiv = document.getElementById('logs');
+
     const now = new Date().toLocaleTimeString('en-GB');
-    const cls = type === 'ok' ? 'log-ok' : type === 'info' ? 'log-info' : 'log-alert';
-    logDiv.innerHTML = `<div class="log-entry"><span class="log-time">[${now}]</span><span class="${cls}"> ${message}</span></div>` + logDiv.innerHTML;
+
+    const cls =
+      type === 'ok'
+        ? 'log-ok'
+        : type === 'info'
+        ? 'log-info'
+        : 'log-alert';
+
+    const entry = `
+      <div class="log-entry">
+        <span class="log-time">[${now}]</span>
+        <span class="${cls}">${message}</span>
+      </div>
+    `;
+
+    logDiv.innerHTML = entry + logDiv.innerHTML;
+
+    historyData.unshift({
+      time: now,
+      event: message,
+      status: type.toUpperCase()
+    });
+
+    updateHistoryTable();
+    updateQualityMetrics();
   }
 
-  function saveToFirebaseLog(event, status) {
-    const ts = new Date().toISOString();
-    db.ref('logs').push({ timestamp: ts, event, status });
-    historyData.unshift({ timestamp: ts, event, status });
-    updateQualityMetrics(event);
-    renderHistory();
+  function updateHistoryTable() {
+
+    const body = document.getElementById('history-body');
+
+    body.innerHTML = historyData
+      .slice(0, 50)
+      .map(item => `
+        <tr>
+          <td>${item.time}</td>
+          <td>${item.event}</td>
+          <td>${item.status}</td>
+        </tr>
+      `)
+      .join('');
   }
 
-  function updateQualityMetrics(event) {
-    if (event.includes('Air Quality')) dailyMetrics.system1Count++;
-    if (event.includes('Temperature')) dailyMetrics.system2Count++;
-    if (event.includes('Sterilization')) dailyMetrics.system3Count++;
-    if (event.includes('Tech Call')) dailyMetrics.nurseCalls++;
-    calculateQualityScore();
-  }
+  function updateQualityMetrics() {
 
-  function calculateQualityScore() {
-    const totalAlerts = dailyMetrics.system1Count + dailyMetrics.system2Count + dailyMetrics.system3Count + dailyMetrics.nurseCalls;
-    const baselineAlerts = 5;
-    const alertCost = Math.max(0, (totalAlerts - baselineAlerts) * 10);
-    const quality = Math.max(0, 100 - alertCost);
+    const totalAlerts =
+      dailyMetrics.system1Count +
+      dailyMetrics.system2Count +
+      dailyMetrics.system3Count +
+      dailyMetrics.nurseCalls;
+
+    let quality = Math.max(0, 100 - totalAlerts * 5);
+
+    document.getElementById('quality-score').textContent =
+      quality + "%";
+
+    document.getElementById('alert-count').textContent =
+      totalAlerts;
+
+    let worst = "All Clear";
+    let max = 0;
 
     const systems = [
-      { name: 'Air Quality', count: dailyMetrics.system1Count },
-      { name: 'Temperature', count: dailyMetrics.system2Count },
-      { name: 'Sterilization', count: dailyMetrics.system3Count }
+      { name: "Air Quality", val: dailyMetrics.system1Count },
+      { name: "Temperature", val: dailyMetrics.system2Count },
+      { name: "Sterilization", val: dailyMetrics.system3Count }
     ];
-    
-    dailyMetrics.degradedSystems = systems.filter(s => s.count >= 8).map(s => s.name);
-    
-    let riskLevel = 'LOW';
-    if (dailyMetrics.degradedSystems.length > 0) riskLevel = 'HIGH';
-    else if (totalAlerts > 15) riskLevel = 'MEDIUM';
 
-    const scoreEl = document.getElementById('quality-score');
-    scoreEl.textContent = quality + '%';
-    scoreEl.className = 'metric-value';
-    if (quality >= 80) scoreEl.classList.add('metric-good');
-    else if (quality >= 60) scoreEl.classList.add('metric-warn');
-    else scoreEl.classList.add('metric-bad');
-
-    document.getElementById('alert-count').textContent = totalAlerts;
-    document.getElementById('risk-level').textContent = riskLevel;
-    document.getElementById('risk-level').style.color = 
-      riskLevel === 'LOW' ? 'var(--success)' : 
-      riskLevel === 'MEDIUM' ? 'var(--warn)' : 
-      'var(--danger)';
-
-    if (dailyMetrics.degradedSystems.length > 0) {
-      document.getElementById('worst-system').textContent = dailyMetrics.degradedSystems[0];
-    } else if (Math.max(...systems.map(s => s.count)) === 0) {
-      document.getElementById('worst-system').textContent = 'All Clear';
-    } else {
-      const worst = systems.reduce((a, b) => a.count > b.count ? a : b);
-      document.getElementById('worst-system').textContent = worst.name + ' (' + worst.count + ')';
-    }
-
-    const noteEl = document.getElementById('quality-note');
-    if (dailyMetrics.degradedSystems.length > 0) {
-      noteEl.textContent = `⚠ ${dailyMetrics.degradedSystems.join(', ')} showing elevated alerts (8+ today). Recommend technician review.`;
-    } else if (totalAlerts === 0) {
-      noteEl.textContent = 'No alerts today. System performing nominally.';
-    } else if (quality >= 80) {
-      noteEl.textContent = `${totalAlerts} alerts within acceptable range. All systems stable.`;
-    } else {
-      noteEl.textContent = `${totalAlerts} alerts detected. Monitor for patterns. Quality: ${quality}%.`;
-    }
-  }
-
-  function renderHistory() {
-    const tbody = document.getElementById('history-body');
-    if (historyData.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">No events.</td></tr>';
-      return;
-    }
-    tbody.innerHTML = historyData.map(row => {
-      const d = new Date(row.timestamp);
-      const ts = d.toLocaleTimeString('en-GB');
-      return `<tr><td>${ts}</td><td>${row.event}</td><td>${row.status}</td></tr>`;
-    }).join('');
-  }
-
-  function setupListener(path, elementId, label) {
-    db.ref(path).on('value', snap => {
-      const val = snap.val();
-      const el = document.getElementById(elementId);
-      const prev = prevState[path];
-      prevState[path] = val;
-      const isNurse = path === 'nurse_call';
-
-      if (val === 1) {
-        el.innerText = isNurse ? '🔔 ACTIVE' : '⚠ TRIGGERED';
-        el.className = isNurse ? 'badge badge-call' : 'badge badge-breach';
-        if (prev !== 1) {
-          addLog(`${label} Triggered`, 'alert');
-          saveToFirebaseLog(label, isNurse ? 'TRIGGERED' : 'TRIGGERED');
-          sendPushNotification(`⚠ ${label}`, 'Attention required in ward.');
-        }
-      } else {
-        el.innerText = isNurse ? 'IDLE' : 'NORMAL ✓';
-        el.className = 'badge badge-secure';
-        if (prev === 1) {
-          addLog(`${label} Cleared`, 'ok');
-          saveToFirebaseLog(label, 'CLEARED');
-        }
-      }
-      checkGlobalState();
-    });
-  }
-
-  function checkGlobalState() {
-    Promise.all([
-      db.ref('system1').once('value'),
-      db.ref('system2').once('value'),
-      db.ref('system3').once('value'),
-      db.ref('nurse_call').once('value')
-    ]).then(([s1, s2, s3, nc]) => {
-      const anyActive = s1.val() == 1 || s2.val() == 1 || s3.val() == 1 || nc.val() == 1;
-      if (anyActive) {
-        startAlarm();
-        document.body.style.backgroundColor = '#1a0008';
-      } else {
-        stopAlarm();
-        document.body.style.backgroundColor = '';
+    systems.forEach(s => {
+      if (s.val > max) {
+        max = s.val;
+        worst = s.name;
       }
     });
+
+    document.getElementById('worst-system').textContent = worst;
+
+    const risk =
+      totalAlerts === 0
+        ? "LOW"
+        : totalAlerts < 5
+        ? "MODERATE"
+        : "HIGH";
+
+    const riskColor =
+      risk === "LOW"
+        ? "var(--success)"
+        : risk === "MODERATE"
+        ? "var(--warn)"
+        : "var(--danger)";
+
+    const riskLevel = document.getElementById('risk-level');
+
+    riskLevel.textContent = risk;
+    riskLevel.style.color = riskColor;
+
+    document.getElementById('quality-note').textContent =
+      totalAlerts === 0
+        ? "No alerts today. System performing nominally."
+        : `Detected ${totalAlerts} system alerts today. Continuous monitoring recommended.`;
   }
 
   function startListeners() {
-    setupListener('system1', 's1_badge', 'System 1: Air Quality');
-    setupListener('system2', 's2_badge', 'System 2: Temperature');
-    setupListener('system3', 's3_badge', 'System 3: Sterilization');
-    setupListener('nurse_call', 'nurse_badge', 'Tech Call');
-  }
 
-  function checkNotifPermission() {
-    if (Notification.permission === 'granted') document.getElementById('notif-bar').classList.add('hidden');
-  }
-  function requestNotifPermission() {
-    Notification.requestPermission().then(p => { if (p === 'granted') checkNotifPermission(); });
-  }
-  function sendPushNotification(title, body) {
-    if (Notification.permission === 'granted') new Notification(title, { body });
-  }
+    const systems = [
+      'system1',
+      'system2',
+      'system3',
+      'nurse_call'
+    ];
 
-  async function analyzeWithOllama(logs) {
-    if (logs.length === 0) {
-      document.getElementById('ollama-result').textContent = 'No alerts to analyze.';
-      return;
-    }
-    
-    document.getElementById('ollama-result').textContent = 'Analyzing with Ollama...';
-    
-    const prompt = `Analyze these ${logs.length} ward alerts:
-${logs.slice(0, 8).map(l => `- ${l.event}`).join('\n')}
+    systems.forEach(system => {
 
-Respond JSON only: {"pattern": "<brief observation>", "concern": "<if any>", "action": "<recommendation>"}`;
+      db.ref(system).on('value', snapshot => {
 
-    try {
-      const response = await fetch('https://cors-anywhere.herokuapp.com/http://localhost:11434/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'qwen3.5',
-          prompt: prompt,
-          stream: false
-        })
+        const value = snapshot.val();
+
+        if (prevState[system] === value) return;
+
+        prevState[system] = value;
+
+        handleSystemUpdate(system, value);
+
       });
 
+    });
+  }
+
+  function handleSystemUpdate(system, value) {
+
+    const badgeMap = {
+      system1: 's1_badge',
+      system2: 's2_badge',
+      system3: 's3_badge',
+      nurse_call: 'nurse_badge'
+    };
+
+    const badge = document.getElementById(badgeMap[system]);
+
+    if (value == 1) {
+
+      badge.className =
+        system === 'nurse_call'
+          ? 'badge badge-call'
+          : 'badge badge-breach';
+
+      badge.textContent =
+        system === 'nurse_call'
+          ? 'CALL ACTIVE'
+          : 'ALERT ACTIVE';
+
+      startAlarm();
+
+      addLog(`${system} triggered`, 'alert');
+
+      if (system === 'system1') dailyMetrics.system1Count++;
+      if (system === 'system2') dailyMetrics.system2Count++;
+      if (system === 'system3') dailyMetrics.system3Count++;
+      if (system === 'nurse_call') dailyMetrics.nurseCalls++;
+
+    } else {
+
+      badge.className = 'badge badge-secure';
+
+      badge.textContent =
+        system === 'nurse_call'
+          ? 'IDLE'
+          : 'NORMAL ✓';
+
+      stopAlarm();
+
+      addLog(`${system} restored`, 'ok');
+    }
+  }
+
+  async function analyzeWithOllama(historyData) {
+
+    const output =
+      document.getElementById("ollama-result");
+
+    output.innerHTML =
+      "Analyzing ward history...";
+
+    try {
+
+      const summary = historyData.length
+        ? historyData
+            .slice(0, 15)
+            .map(e =>
+              `${e.time} | ${e.event} | ${e.status}`
+            )
+            .join("\n")
+        : "No alerts recorded.";
+
+      const prompt = `
+You are an AI hospital monitoring assistant.
+
+Analyze these ward logs and provide:
+
+1. Risk level
+2. Most problematic system
+3. Recommended action
+4. Technical summary
+
+Logs:
+${summary}
+`;
+
+      const response = await fetch(
+        "http://localhost:11434/api/generate",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model: "llama3",
+            prompt: prompt,
+            stream: false
+          })
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Ollama API failed");
+      }
+
       const data = await response.json();
-      const result = JSON.parse(data.response);
-      document.getElementById('ollama-result').textContent = result.pattern + ' — ' + (result.concern || 'No concerns');
+
+      output.innerHTML = `
+        <div style="color:#00e676;font-weight:bold;margin-bottom:10px;">
+          AI ANALYSIS COMPLETE
+        </div>
+
+        <div style="white-space:pre-wrap;line-height:1.5;color:#8ab0cc;">
+${data.response}
+        </div>
+      `;
+
     } catch (err) {
-      document.getElementById('ollama-result').textContent = 'Ollama connection failed. Keep app open and check Ollama is running.';
+
+      console.error(err);
+
+      output.innerHTML = `
+        <div style="color:#ff3b5c;">
+          Ollama connection failed
+        </div>
+
+        <br>
+
+        Make sure:
+        <br>• Ollama is running
+        <br>• llama3 is installed
+        <br>• localhost:11434 is accessible
+      `;
     }
   }
 
   function exportCSV() {
-    if (historyData.length === 0) return;
-    const rows = [['Timestamp', 'Event', 'Status'], ...historyData.map(r => [r.timestamp, r.event, r.status])];
-    const csv = rows.map(r => r.join(',')).join('\n');
+
+    let csv =
+      "Timestamp,Event,Status\n";
+
+    historyData.forEach(item => {
+
+      csv +=
+        `"${item.time}","${item.event}","${item.status}"\n`;
+
+    });
+
+    const blob = new Blob(
+      [csv],
+      { type: "text/csv" }
+    );
+
     const a = document.createElement('a');
-    a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
-    a.download = 'ward_log.csv';
+
+    a.href = URL.createObjectURL(blob);
+
+    a.download = "ward_logs.csv";
+
     a.click();
   }
 
-  setInterval(() => { document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-GB'); }, 1000);
+  function requestNotifPermission() {
+
+    Notification.requestPermission()
+      .then(permission => {
+
+        if (permission === "granted") {
+
+          document
+            .getElementById('notif-bar')
+            .classList.add('hidden');
+        }
+
+      });
+  }
+
+  function checkNotifPermission() {
+
+    if (Notification.permission === "granted") {
+
+      document
+        .getElementById('notif-bar')
+        .classList.add('hidden');
+    }
+  }
+
+  setInterval(() => {
+
+    document.getElementById('clock').textContent =
+      new Date().toLocaleTimeString('en-GB');
+
+  }, 1000);
+
 </script>
-</body>
-</html>
